@@ -19,7 +19,7 @@
             android:id="@+id/alertTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Alert Title"
+            android:text="@string/alert_title"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"/>
@@ -28,7 +28,7 @@
             android:id="@+id/alertMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Alert message goes here"
+            android:text="@string/alert_message_goes_here"
             android:textSize="16sp"
             android:layout_marginTop="4dp"
             android:textColor="@android:color/black"/>
@@ -37,10 +37,10 @@
             android:id="@+id/alertTimestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Timestamp"
-            android:textSize="14sp"
             android:layout_marginTop="4dp"
-            android:textColor="@android:color/darker_gray"/>
+            android:text="@string/timestamp"
+            android:textColor="#757575"
+            android:textSize="14sp" />
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

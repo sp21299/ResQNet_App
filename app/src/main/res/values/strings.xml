@@ -38,16 +38,17 @@
     <string name="title_activity_side_drawer">sideDrawer</string>
     <string name="profile">profile</string>
     <string name="chat">chat</string>
-    <string name="resqnet_2025">© ResQNet 2025</string>
-    <string name="title_activity_login2">LoginActivity2</string>
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Sign in or register</string>
     <string name="action_sign_in_short">Sign in</string>
-    <string name="welcome">"Welcome !"</string>
+    <string name="welcome">Welcome !</string> <!-- Removed unnecessary inner quotes -->
     <string name="invalid_username">Not a valid username</string>
-    <string name="invalid_password">Password must be >5 characters</string>
-    <string name="login_failed">"Login failed"</string>
+    <string name="invalid_password">Password must be &gt;5 characters</string> <!-- Escaped > -->
+    <string name="login_failed">Login failed</string> <!-- Removed unnecessary inner quotes -->
     <string name="title_activity_sidebar_menu">sidebar_menu</string>
     <string name="no_alerts_available">No alerts available</string>
+    <string name="alert_message_goes_here">Alert message goes here</string>
+    <string name="timestamp">Timestamp</string>
+    <string name="alert_title">Alert Title</string>
 </resources>

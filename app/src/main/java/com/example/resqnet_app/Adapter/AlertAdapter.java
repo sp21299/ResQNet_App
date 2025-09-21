@@ -1,5 +1,6 @@
 package com.example.resqnet_app.Adapter;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,23 +9,26 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.resqnet_app.model.AlertModel;
 import com.example.resqnet_app.R;
+import com.example.resqnet_app.model.AlertModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertViewHolder> {
 
-    private List<AlertModel> alertList;
+    private final List<AlertModel> alertList;
 
     public AlertAdapter(List<AlertModel> alertList) {
-        this.alertList = alertList;
+        // avoid null pointer if passed null
+        this.alertList = alertList != null ? alertList : new ArrayList<>();
     }
 
     @NonNull
     @Override
     public AlertViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_alert, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_alert, parent, false);
         return new AlertViewHolder(view);
     }
 
@@ -39,6 +43,16 @@ public class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertViewHol
     @Override
     public int getItemCount() {
         return alertList.size();
+    }
+
+    // ✅ Fixed method
+    @SuppressLint("NotifyDataSetChanged")
+    public void updateData(List<AlertModel> newAlerts) {
+        alertList.clear();
+        if (newAlerts != null) {
+            alertList.addAll(newAlerts);
+        }
+        notifyDataSetChanged();
     }
 
     static class AlertViewHolder extends RecyclerView.ViewHolder {
