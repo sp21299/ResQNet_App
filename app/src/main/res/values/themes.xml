@@ -1,0 +1,34 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base theme for the app -->
+    <style name="Base.Theme.Resqnet_app" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/purple</item>
+        <item name="colorPrimaryVariant">@color/purple</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/CoolGray</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+
+        <!-- Customize window background -->
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <!-- Main app theme -->
+    <style name="Theme.Resqnet_app" parent="Base.Theme.Resqnet_app" />
+
+    <!-- No ActionBar theme -->
+    <style name="Theme.Resqnet_app.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- ActionBar disabled for activities using Toolbar -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Toolbar overlay theme -->
+    <style name="Theme.Resqnet_app.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
+
+    <!-- Popup menu overlay theme -->
+    <style name="Theme.Resqnet_app.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
+
+</resources>

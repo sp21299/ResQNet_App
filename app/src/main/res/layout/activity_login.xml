@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/img_1"
+    tools:context="LoginActivity">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="320dp"
+            android:layout_height="460dp"
+            android:layout_margin="30dp"
+            app:cardCornerRadius="30dp"
+            android:elevation="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/levender_border"
+                    android:padding="16dp">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:id="@+id/account"
+                            android:text="Login"
+                            android:textAlignment="center"
+                            android:textColor="@color/levender"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:layout_width="match_parent"
+                            android:layout_marginTop="29dp"
+                            android:layout_height="50dp"
+                            android:inputType="textEmailAddress"
+                            android:hint="  Enter Email"
+                            android:drawablePadding="8dp"
+                            android:drawableStart="@drawable/email"
+                            android:id="@+id/login_email"
+                            android:background="@drawable/levender_border"
+                            android:padding="10dp"/>
+
+                        <EditText
+                            android:id="@+id/login_Password"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:ems="10"
+                            android:drawableStart="@drawable/lock_24dp_e3e3e3"
+                            android:background="@drawable/levender_border"
+                            android:padding="10dp"
+                            android:drawablePadding="8dp"
+                            android:hint="  Enter Password"
+                            android:layout_marginTop="27dp"
+                            android:inputType="textPassword" />
+                        <Button
+                            android:layout_width="match_parent"
+                            android:layout_height="60dp"
+                            android:layout_marginTop="27dp"
+                            android:text="Login"
+                            android:id="@+id/login"
+                            android:textSize="20sp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/RegisterRedirectText"
+                            android:text="Don't have an account? Create Account"
+                            android:layout_gravity="center"
+                            android:layout_marginTop="20dp"
+                            android:padding="8dp"
+                            android:textSize="16sp"
+                            android:textColor="@color/levender"/>
+
+                        <Button
+                            android:id="@+id/button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Button" />
+
+                </LinearLayout>
+                <!-- Recent Incidents Title -->
+
+                <!-- RecyclerView for Recent Incidents -->
+
+                <!-- Bottom Navigation -->
+
+        </androidx.cardview.widget.CardView>
+
+</LinearLayout>

@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">Resqnet_app</string>
+    <string name="ClientId">964287437161-21fdi1826i8c5jo3ig9n38uoe7v53a94.apps.googleusercontent.com</string>
+    <string name="emergency">Emergency</string>
+    <string name="sos">SOS</string>
+    <string name="emergency_n_sos">Emergency \n SOS</string>
+    <string name="resqnet">ResQNet</string>
+    <string name="title_activity_home1">activity_home1</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">Home</string>
+    <string name="menu_gallery">Gallery</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <string name="map">Map</string>
+    <string name="alerts">Alerts</string>
+    <string name="logout">Logout</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="incident_title">Incident Title</string>
+    <string name="urgent">urgent</string>
+    <string name="reported_10min_ago">Reported : 10min ago</string>
+    <string name="report_issue">Report Issue</string>
+    <string name="cancel_sos">Cancel SOS</string>
+    <string name="create_account">Create Account</string>
+    <string name="enter_email">Enter Email</string>
+    <string name="enter_password">Enter Password</string>
+    <string name="already_have_a_account_login">Already have a account? login</string>
+    <string name="enter_name">Enter Name</string>
+    <string name="recent_incidents">Recent Incidents</string>
+    <string name="home">home</string>
+    <string name="todo">TODO</string>
+    <string name="welcome_to_resque_hub">Welcome to ResQue Hub</string>
+    <string name="title_activity_side_drawer">sideDrawer</string>
+    <string name="profile">profile</string>
+    <string name="chat">chat</string>
+    <string name="resqnet_2025">© ResQNet 2025</string>
+    <string name="title_activity_login2">LoginActivity2</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="title_activity_sidebar_menu">sidebar_menu</string>
+    <string name="no_alerts_available">No alerts available</string>
+</resources>

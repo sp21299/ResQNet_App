@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/img_1">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="320dp"
+        android:layout_height="460dp"
+        android:layout_margin="30dp"
+        app:cardCornerRadius="30dp"
+        android:elevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/levender_border"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:id="@+id/account"
+                android:text="@string/create_account"
+                android:textAlignment="center"
+                android:textColor="@color/levender"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/name"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="35dp"
+                android:background="@drawable/levender_border"
+                android:drawableStart="@drawable/account_person"
+                android:drawablePadding="8dp"
+                android:hint="@string/enter_name"
+                android:inputType="textPersonName"
+                android:padding="10dp"
+                tools:ignore="LabelFor" />
+
+            <EditText
+                android:id="@+id/email"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="27dp"
+                android:autofillHints="Email"
+                android:background="@drawable/levender_border"
+                android:drawableStart="@drawable/email"
+                android:drawablePadding="8dp"
+                android:hint="@string/enter_email"
+                android:inputType="textEmailAddress"
+                android:padding="10dp"
+                android:textColorHint="#A8AED2" />
+
+            <EditText
+                android:id="@+id/password"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:ems="10"
+                android:drawablePadding="8dp"
+                android:drawableStart="@drawable/lock_24dp_e3e3e3"
+                android:background="@drawable/levender_border"
+                android:padding="10dp"
+                android:hint="@string/enter_password"
+                android:layout_marginTop="27dp"
+                android:inputType="textPassword" />
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="23dp"
+                android:text="Register"
+                android:id="@+id/create_account"
+                android:textSize="20sp"/>
+
+            <TextView
+                android:id="@+id/loginRedirectText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="20dp"
+                android:padding="8dp"
+                android:text="@string/already_have_a_account_login"
+                android:textColor="#5C6BC0"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>
