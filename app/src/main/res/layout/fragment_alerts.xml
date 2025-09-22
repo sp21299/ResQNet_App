@@ -14,7 +14,7 @@
         android:id="@+id/toolbar_alerts"
         android:layout_width="0dp"
         android:layout_height="60dp"
-        android:background="@color/CoolGray"
+        android:background="@color/cool_gray"
         android:title="@string/alerts"
         android:titleTextColor="@android:color/white"
         app:navigationIcon="@drawable/menu"

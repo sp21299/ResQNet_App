@@ -8,7 +8,7 @@
         <item name="colorOnPrimary">@android:color/white</item>
 
         <!-- Secondary brand color -->
-        <item name="colorSecondary">@color/CoolGray</item>
+        <item name="colorSecondary">@color/cool_gray</item>
         <item name="colorOnSecondary">@android:color/white</item>
 
         <!-- Customize window background -->

@@ -3,7 +3,7 @@
     <string name="ClientId">964287437161-21fdi1826i8c5jo3ig9n38uoe7v53a94.apps.googleusercontent.com</string>
     <string name="emergency">Emergency</string>
     <string name="sos">SOS</string>
-    <string name="emergency_n_sos">Emergency \n SOS</string>
+    <string name="emergency_n_sos">Emergency\nSOS</string>
     <string name="resqnet">ResQNet</string>
     <string name="title_activity_home1">activity_home1</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
@@ -51,4 +51,10 @@
     <string name="alert_message_goes_here">Alert message goes here</string>
     <string name="timestamp">Timestamp</string>
     <string name="alert_title">Alert Title</string>
+    <string name="view_sos">View SOS</string>
+    <string name="add_alert">Add Alert</string>
+    <string name="title_activity_bottom">bottom_activity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
 </resources>

@@ -12,6 +12,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Resqnet_app">
         <activity
+            android:name=".bottom"
+            android:exported="false"
+            android:label="@string/title_activity_bottom" />
+        <activity
+            android:name=".bottom_activity"
+            android:exported="false"
+            android:label="@string/title_activity_bottom" />
+        <activity
             android:name=".sidebar_menu"
             android:exported="false"
             android:label="@string/title_activity_sidebar_menu"
@@ -19,8 +27,7 @@
         <activity
             android:name=".home_activity"
             android:exported="false"
-            android:theme="@style/Theme.Resqnet_app.NoActionBar"/>
-
+            android:theme="@style/Theme.Resqnet_app.NoActionBar" />
         <activity
             android:name=".LoginActivity"
             android:exported="true">

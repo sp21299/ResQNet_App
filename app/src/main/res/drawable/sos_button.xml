@@ -1,6 +1,58 @@
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#C43232" />
-    <size android:width="120dp" android:height="120dp" />
+<!--<layer-list xmlns:android="http://schemas.android.com/apk/res/android">-->
 
-</shape>
+<!--    &lt;!&ndash; Outer glow layer &ndash;&gt;-->
+<!--    <item>-->
+<!--        <shape android:shape="oval">-->
+<!--            <gradient-->
+<!--                android:startColor="#C58989"-->
+<!--                android:centerColor="#C36161"-->
+<!--                android:endColor="#C58181"-->
+<!--                android:angle="0"-->
+<!--                android:gradientRadius="9dp"/>-->
+<!--            <size-->
+<!--                android:width="140dp"-->
+<!--                android:height="140dp" />-->
+<!--        </shape>-->
+<!--    </item>-->
+
+<!--    &lt;!&ndash; Inner button layer &ndash;&gt;-->
+<!--    <item android:top="10dp" android:bottom="10dp" android:left="10dp" android:right="10dp">-->
+<!--        <shape android:shape="oval">-->
+<!--            <solid android:color="#BC2727"/>-->
+<!--            <size-->
+<!--                android:width="120dp"-->
+<!--                android:height="120dp" />-->
+<!--            <stroke-->
+<!--                android:width="8dp"-->
+<!--                android:color="#CA7373"/>-->
+<!--        </shape>-->
+<!--    </item>-->
+<!--   -->
+
+<!--</layer-list>-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Outer Glow -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:startColor="#C43232"
+                android:centerColor="#FF6A6A"
+                android:endColor="#00C43232"
+                android:angle="0"/>
+        </shape>
+    </item>
+
+    <!-- Inner Circle -->
+    <item android:top="12dp" android:bottom="12dp" android:left="12dp" android:right="12dp">
+        <shape android:shape="oval">
+            <solid android:color="#C43232"/>
+            <stroke
+                android:width="4dp"
+                android:color="#FFFFFF"/>
+        </shape>
+    </item>
+
+</layer-list>
+
+

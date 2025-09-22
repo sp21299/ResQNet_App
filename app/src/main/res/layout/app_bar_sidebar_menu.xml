@@ -14,7 +14,7 @@
             android:id="@+id/tool"
             android:layout_width="match_parent"
             android:layout_height="100dp"
-            android:background="@color/CoolGray"
+            android:background="@color/cool_gray"
             tools:ignore="DuplicateIds" />
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -33,7 +33,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:background="@color/CoolGray"
+        android:background="@color/cool_gray"
         app:popupTheme="@style/Theme.Resqnet_app.PopupOverlay" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

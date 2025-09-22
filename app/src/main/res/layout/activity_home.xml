@@ -29,6 +29,15 @@
             android:layout_height="0dp"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
             app:layout_constraintBottom_toBottomOf="parent"/>
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/nav_view1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:menu="@menu/activity_main_drawer"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Drawer menu -->
@@ -41,5 +50,6 @@
         app:headerLayout="@layout/nav_header_sidebar_menu"
         app:menu="@menu/sidebar_menu"
         tools:ignore="VisualLintBounds" />
+
 </androidx.drawerlayout.widget.DrawerLayout>
 

@@ -5,44 +5,29 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeFragment"
-    android:background="@drawable/screen_bg">
+    android:background="@color/cool_gray">
     <!-- Round Red SOS Button -->
 
     <!-- 2x2 Grid Buttons -->
 
-    <Button
-        android:id="@+id/sosButton"
-        android:layout_width="180dp"
-        android:layout_height="180dp"
-        android:layout_marginTop="80dp"
-        android:background="@drawable/sos_button"
-        android:elevation="8dp"
-        android:text="@string/emergency_n_sos"
-        android:textColor="@android:color/white"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:backgroundTint="@null"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <GridLayout
         android:id="@+id/gridButtons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="76dp"
         android:alignmentMode="alignMargins"
         android:columnCount="2"
         android:rowCount="2"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintHorizontal_bias="0.444"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sosButton">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.038">
 
         <Button
             android:id="@+id/homeButton"
-            android:layout_width="140dp"
+            android:layout_width="160dp"
             android:layout_height="140dp"
             android:layout_margin="8dp"
             android:background="@drawable/home_bg"
@@ -50,14 +35,14 @@
             android:gravity="center"
             android:paddingTop="6dp"
             android:paddingBottom="16dp"
-            android:text="Home"
+            android:text="@string/home"
             android:textColor="@color/black"
             android:textSize="16sp"
             app:backgroundTint="@null" />
 
         <Button
             android:id="@+id/alertButton"
-            android:layout_width="140dp"
+            android:layout_width="160dp"
             android:layout_height="140dp"
             android:layout_row="0"
             android:layout_column="1"
@@ -67,41 +52,104 @@
             android:gravity="center"
             android:paddingTop="16dp"
             android:paddingBottom="26dp"
-            android:text="Alert"
+            android:text="@string/alerts"
             android:textColor="@android:color/black"
             android:textSize="16sp"
             app:backgroundTint="@null" />
 
         <Button
             android:id="@+id/mapButton"
-            android:layout_width="140dp"
+            android:layout_width="160dp"
             android:layout_height="140dp"
+            android:layout_row="1"
+            android:layout_column="1"
             android:layout_margin="8dp"
             android:background="@drawable/home_bg"
             android:drawablePadding="8dp"
             android:gravity="center"
             android:paddingTop="6dp"
             android:paddingBottom="6dp"
-            android:text="Map"
+            android:text="@string/map"
             android:textColor="@android:color/black"
             android:textSize="16sp"
             app:backgroundTint="@null" />
 
         <Button
             android:id="@+id/chatButton"
-            android:layout_width="140dp"
+            android:layout_width="160dp"
             android:layout_height="140dp"
+            android:layout_row="1"
+            android:layout_column="0"
             android:layout_margin="8dp"
             android:background="@drawable/home_bg"
             android:drawablePadding="8dp"
             android:gravity="center"
             android:paddingTop="6dp"
             android:paddingBottom="6dp"
-            android:text="Chat"
+            android:text="@string/chat"
             android:textColor="@android:color/black"
             android:textSize="16sp"
             app:backgroundTint="@null" />
 
     </GridLayout>
 
+    <Button
+        android:id="@+id/sosButton"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:background="@drawable/sos_button"
+        android:elevation="8dp"
+        android:text="@string/emergency_n_sos"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:backgroundTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.635" />
+
+    <Button
+        android:id="@+id/see_sos"
+        android:layout_width="160dp"
+        android:layout_height="140dp"
+        android:layout_margin="8dp"
+        android:background="@drawable/home_bg"
+        android:drawablePadding="8dp"
+        android:gravity="center"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:text="@string/view_sos"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        app:backgroundTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.936"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.972" />
+
+    <Button
+        android:id="@+id/add_alert"
+        android:layout_width="160dp"
+        android:layout_height="140dp"
+        android:layout_margin="8dp"
+        android:background="@drawable/home_bg"
+        android:drawablePadding="8dp"
+        android:gravity="center"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:text="@string/add_alert"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        app:backgroundTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.18"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.972" />
 </androidx.constraintlayout.widget.ConstraintLayout>

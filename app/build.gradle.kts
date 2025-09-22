@@ -47,6 +47,8 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 // CardView (for alert cards)
     implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.fragment:fragment:1.8.4")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
