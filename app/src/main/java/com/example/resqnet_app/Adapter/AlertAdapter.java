@@ -10,17 +10,18 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.resqnet_app.R;
+import com.example.resqnet_app.data.Alert;
+
 import com.example.resqnet_app.model.AlertModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.example.resqnet_app.data.Alert;
 
 public class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertViewHolder> {
+    private final List<Alert> alertList;
 
-    private final List<AlertModel> alertList;
-
-    public AlertAdapter(List<AlertModel> alertList) {
-        // avoid null pointer if passed null
+    public AlertAdapter(List<Alert> alertList) {
         this.alertList = alertList != null ? alertList : new ArrayList<>();
     }
 
@@ -34,10 +35,10 @@ public class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertViewHol
 
     @Override
     public void onBindViewHolder(@NonNull AlertViewHolder holder, int position) {
-        AlertModel alert = alertList.get(position);
-        holder.title.setText(alert.getTitle());
-        holder.message.setText(alert.getMessage());
-        holder.timestamp.setText(alert.getTimestamp());
+        Alert alert = alertList.get(position);
+        holder.title.setText(alert.title);
+        holder.message.setText(alert.message);
+        holder.timestamp.setText(alert.timestamp);
     }
 
     @Override
@@ -45,9 +46,8 @@ public class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertViewHol
         return alertList.size();
     }
 
-    // ✅ Fixed method
     @SuppressLint("NotifyDataSetChanged")
-    public void updateData(List<AlertModel> newAlerts) {
+    public void updateData(List<Alert> newAlerts) {
         alertList.clear();
         if (newAlerts != null) {
             alertList.addAll(newAlerts);

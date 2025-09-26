@@ -34,6 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:background="@color/cool_gray"
-        app:popupTheme="@style/Theme.Resqnet_app.PopupOverlay" />
+        app:popupTheme="@style/Theme.Resqnet_app.PopupOverlay"
+        />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

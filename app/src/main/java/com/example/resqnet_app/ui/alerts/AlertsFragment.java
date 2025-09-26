@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.resqnet_app.Adapter.AlertAdapter;
 import com.example.resqnet_app.Api.ApiService;
+import com.example.resqnet_app.data.Alert;
 import com.example.resqnet_app.model.AlertModel;
 import com.example.resqnet_app.R;
 
@@ -67,7 +68,7 @@ public class AlertsFragment extends Fragment {
                     List<AlertModel> alerts = response.body();
 
                     if (!alerts.isEmpty()) {
-                        adapter.updateData(alerts);
+                        adapter.updateData(AlertModel.toAlertList(alerts));
                         recyclerView.setVisibility(View.VISIBLE);
                         emptyText.setVisibility(View.GONE);
                     } else {

@@ -3,19 +3,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/nav_home"
+        android:id="@+id/bottom_home"
         android:icon="@drawable/home_24dp_e3e3e3_fill0_wght400_grad0_opsz24"
         android:title="@string/menu_home" />
     <item
-        android:id="@+id/nav_alert"
+        android:id="@+id/bottom_alert"
         android:icon="@drawable/alert"
         android:title="@string/alerts" />
     <item
-        android:id="@+id/nav_map"
+        android:id="@+id/bottom_map"
         android:icon="@drawable/map"
         android:title="@string/map" />
     <item
-        android:id="@+id/nav_chat"
+        android:id="@+id/bottom_chat"
         android:icon="@drawable/chat_24dp_e3e3e3_fill0_wght400_grad0_opsz24"
         android:title="@string/chat" />
 </menu>

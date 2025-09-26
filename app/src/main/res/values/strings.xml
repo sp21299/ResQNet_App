@@ -57,4 +57,8 @@
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="person">person</string>
+    <string name="menu">menu</string>
+    <string name="active_sos">Active SOS</string>
+    <string name="resolved_sos">Resolved SOS</string>
 </resources>

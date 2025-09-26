@@ -1,5 +1,9 @@
 package com.example.resqnet_app.model;
 
+import com.example.resqnet_app.data.Alert;
+
+import java.util.List;
+
 public class AlertModel {
     private String title;
     private String message;
@@ -11,6 +15,11 @@ public class AlertModel {
         this.timestamp = timestamp;
     }
 
+    public static List<Alert> toAlertList(List<AlertModel> alertModels) {
+        return alertModels.stream()
+                .map(alertModel -> new Alert(alertModel.getTitle(), alertModel.getMessage(), alertModel.getTimestamp()))
+                .toList();
+    }
     public String getTitle() {
         return title;
     }
