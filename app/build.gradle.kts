@@ -1,8 +1,8 @@
-
-
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.google.gms.google.services)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android") version "2.2.20" // Kotlin plugin
+    id("org.jetbrains.kotlin.kapt") version "2.2.20"    // KAPT plugin
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -38,17 +38,23 @@ android {
 }
 
 dependencies {
+    // ---------- ROOM DATABASE ----------
+//    val roomVersion = "2.8.1"
 
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-// Gson converter for Retrofit
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-// RecyclerView (if not already added)
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
-// CardView (for alert cards)
-    implementation("androidx.cardview:cardview:1.0.0")
-    implementation("androidx.fragment:fragment:1.8.4")
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    // Core Room
+    implementation(libs.androidx.room.runtime.v281)
+    kapt(libs.androidx.room.compiler.v281)       // for annotation processing
+    implementation(libs.androidx.room.ktx) // Kotlin extensions (Coroutines support)
+
+    // Optional Room features
+    implementation(libs.androidx.room.rxjava2)
+    implementation(libs.androidx.room.rxjava3)
+    implementation(libs.androidx.room.guava)
+    implementation(libs.androidx.room.paging)
+    testImplementation(libs.androidx.room.testing)
+
+
+    // Your existing dependencies
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
@@ -65,11 +71,8 @@ dependencies {
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
     implementation(libs.play.services.maps)
-    implementation(libs.room.common.jvm)
-    implementation(libs.room.runtime)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    annotationProcessor(libs.room.compiler)
-
 }
