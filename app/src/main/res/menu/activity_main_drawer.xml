@@ -20,5 +20,9 @@
             android:id="@+id/nav_chat"
             android:icon="@drawable/chat_24dp_e3e3e3_fill0_wght400_grad0_opsz24"
             android:title="@string/chat" />
+        <item
+            android:id="@+id/nav_logout"
+            android:icon="@drawable/logout"
+            android:title="@string/logout" />
     </group>
 </menu>

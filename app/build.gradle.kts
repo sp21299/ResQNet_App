@@ -1,9 +1,10 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android") version "2.2.20" // Kotlin plugin
-    id("org.jetbrains.kotlin.kapt") version "2.2.20"    // KAPT plugin
+    id("org.jetbrains.kotlin.android") version "2.2.20"
+    id("org.jetbrains.kotlin.kapt")   // No version here
     id("com.google.gms.google-services")
 }
+
 
 android {
     namespace = "com.example.resqnet_app"
@@ -29,17 +30,25 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
+    kotlin {
+        jvmToolchain(21)
+    }
+
     buildFeatures {
         viewBinding = true
     }
+
 }
 
 dependencies {
     // ---------- ROOM DATABASE ----------
 //    val roomVersion = "2.8.1"
+
+
+
 
     // Core Room
     implementation(libs.androidx.room.runtime.v281)
