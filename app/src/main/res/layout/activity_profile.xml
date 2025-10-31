@@ -13,107 +13,145 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/screen_bg"/>
+        android:alpha="0.4"
+        android:background="@color/white"/>
 
     <!-- Profile Card -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="34dp"
-        app:cardCornerRadius="34dp"
-        app:cardElevation="8dp"
-        android:background="@drawable/levender_border"
-        app:layout_constraintBottom_toBottomOf="@+id/background_image"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="24dp"
+        app:cardCornerRadius="44dp"
+        app:cardElevation="12dp"
+        android:background="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@drawable/levender_border"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="24dp"
+            android:gravity="center_horizontal">
 
             <!-- Profile Image -->
             <ImageView
                 android:id="@+id/profile_image"
-                android:layout_width="100dp"
-                android:layout_height="100dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/levender_border"
-                android:padding="4dp"
                 android:scaleType="centerCrop"
-                android:src="@drawable/account_person" />
+                android:background="@drawable/profile_image_ring"
+                android:src="@drawable/account_person"
+                android:clipToOutline="true" />
 
-            <!-- User Name -->
-            <TextView
+            <!-- Name -->
+            <EditText
                 android:id="@+id/user_name"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:hint="user Name"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textSize="22sp"
+                android:textColor="#333333"
+                android:hint="User Name"
+                android:enabled="false"
+                android:background="@null"
+                android:inputType="textPersonName"/>
 
             <!-- Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginVertical="16dp"
-                android:background="@android:color/darker_gray" />
-            <!-- User Email -->
-            <TextView
+                android:background="#D3D3D3" />
+
+            <!-- Email -->
+            <EditText
                 android:id="@+id/user_email"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:hint="user@example.com" />
+                android:textSize="16sp"
+                android:textColor="#555555"
+                android:hint="user@example.com"
+                android:enabled="false"
+                android:background="@null"
+                android:inputType="textEmailAddress"/>
 
-            <!-- Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginVertical="16dp"
-                android:background="@android:color/darker_gray" />
+                android:background="#D3D3D3" />
 
-            <TextView
+            <!-- Birth Date -->
+            <EditText
                 android:id="@+id/user_birth"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:hint="dd-mm-yyyy" />
-            <!-- Divider -->
-            <View
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="16dp"
-                android:background="@android:color/darker_gray" />
-            <!-- User Phone -->
-            <TextView
-                android:id="@+id/user_phone"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:hint="+91 XXXXXXXXXX" />
+                android:textSize="16sp"
+                android:textColor="#555555"
+                android:hint="dd-mm-yyyy"
+                android:enabled="false"
+                android:background="@null"
+                android:inputType="date"/>
 
-            <!-- Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginVertical="16dp"
-                android:background="@android:color/darker_gray" />
-            <!-- Logout Button -->
-            <Button
-                android:id="@+id/edit_profile"
+                android:background="#D3D3D3" />
+
+            <!-- Phone -->
+            <EditText
+                android:id="@+id/user_phone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="46dp"
-                android:backgroundTint="#258ADC"
+                android:textSize="16sp"
+                android:textColor="#555555"
+                android:hint="+91 XXXXXXXXXX"
+                android:enabled="false"
+                android:background="@null"
+                android:inputType="phone"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="16dp"
+                android:background="#D3D3D3" />
+
+            <!-- Address -->
+            <EditText
+                android:id="@+id/user_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="#555555"
+                android:hint="Address"
+                android:enabled="false"
+                android:background="@null"
+                android:inputType="textPostalAddress"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="16dp"
+                android:background="#D3D3D3" />
+
+            <!-- Edit / Save Button -->
+            <Button
+                android:id="@+id/editbutton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="#1D89DE"
                 android:text="Edit Profile"
-                android:textColor="@android:color/white" />
+                android:textColor="@android:color/white"
+                android:paddingVertical="12dp"
+                android:drawablePadding="8dp"
+                android:elevation="6dp" />
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>

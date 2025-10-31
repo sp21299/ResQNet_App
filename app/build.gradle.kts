@@ -4,8 +4,12 @@ plugins {
     id("org.jetbrains.kotlin.kapt")   // No version here
     id("com.google.gms.google-services")
 }
-
-
+buildscript {
+    dependencies {
+        classpath ("com.android.tools.build:gradle:8.2.1")
+        classpath ("com.google.gms:google-services:4.4.0")
+    }
+}
 android {
     namespace = "com.example.resqnet_app"
     compileSdk = 36
@@ -44,9 +48,8 @@ android {
 }
 
 dependencies {
-    // ---------- ROOM DATABASE ----------
-//    val roomVersion = "2.8.1"
 
+    implementation("com.google.android.gms:play-services-nearby:19.3.0")
 
 
 

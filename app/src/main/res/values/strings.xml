@@ -61,4 +61,11 @@
     <string name="menu">menu</string>
     <string name="active_sos">Active SOS</string>
     <string name="resolved_sos">Resolved SOS</string>
+    <string name="image">image</string>
+    <string name="user_name">User Name</string>
+    <string name="user_example_com">user@example.com</string>
+    <string name="_91_xxxxxxxxxx">+91 XXXXXXXXXX</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="dd_mm_yyyy">dd-mm-yyyy</string>
+    <string name="address">Address</string>
 </resources>

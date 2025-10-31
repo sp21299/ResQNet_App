@@ -36,7 +36,7 @@
 
                         <EditText
                             android:layout_width="match_parent"
-                            android:layout_marginTop="29dp"
+                            android:layout_marginTop="45dp"
                             android:layout_height="50dp"
                             android:inputType="textEmailAddress"
                             android:hint="  Enter Email"
@@ -71,16 +71,12 @@
                             android:id="@+id/RegisterRedirectText"
                             android:text="Don't have an account? Create Account"
                             android:layout_gravity="center"
-                            android:layout_marginTop="20dp"
+                            android:layout_marginTop="5dp"
                             android:padding="8dp"
                             android:textSize="16sp"
                             android:textColor="@color/levender"/>
 
-                        <Button
-                            android:id="@+id/button"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Button" />
+
 
                 </LinearLayout>
                 <!-- Recent Incidents Title -->

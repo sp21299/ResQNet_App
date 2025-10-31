@@ -1,6 +1,7 @@
 package com.example.resqnet_app.ui.home;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,75 +30,58 @@ import java.util.List;
 import java.util.Locale;
 
 public class HomeFragment extends Fragment {
+    private static final String TAG = "HomeFragment";
 
     private FragmentHomeBinding binding;
-    private AlertAdapter alertAdapter; // ✅ keep one adapter
+    private AlertAdapter alertAdapter;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
+        // 1) Inflate binding first
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // Setup RecyclerView
+        // 2) Setup RecyclerView and adapter BEFORE loading DB
         binding.activeSosRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         alertAdapter = new AlertAdapter(new ArrayList<>());
         binding.activeSosRecyclerView.setAdapter(alertAdapter);
 
-        // Load saved alerts from Room
+        // 3) Load saved alerts from Room
         loadAlerts();
 
+        // 4) Toolbar & drawer (defensive null-checks)
         AppCompatActivity activity = (AppCompatActivity) getActivity();
-        if (activity == null) return root;
+        if (activity != null) {
+            Toolbar toolbar = activity.findViewById(R.id.toolbar);
+            activity.setSupportActionBar(toolbar);
+            if (activity.getSupportActionBar() != null) {
+                activity.getSupportActionBar().setTitle("Home");
+            }
 
-        // Set toolbar
-        Toolbar toolbar = activity.findViewById(R.id.toolbar);
-        activity.setSupportActionBar(toolbar);
-        if (activity.getSupportActionBar() != null) {
-            activity.getSupportActionBar().setTitle("Home");
+            DrawerLayout drawer = activity.findViewById(R.id.drawer_layout);
+            NavigationView navView = activity.findViewById(R.id.nav_view);
+            toolbar.setNavigationOnClickListener(v -> {
+                if (drawer != null) drawer.openDrawer(GravityCompat.START);
+            });
+        } else {
+            Log.w(TAG, "Activity is null in onCreateView");
         }
 
-        // Drawer layout
-        DrawerLayout drawer = activity.findViewById(R.id.drawer_layout);
-        NavigationView navView = activity.findViewById(R.id.nav_view);
-
-        // Navigation icon opens drawer
-        toolbar.setNavigationOnClickListener(v -> drawer.openDrawer(GravityCompat.START));
-
-        // SOS button click → show confirmation dialog
+        // 5) Hook up SOS button & See SOS button
         binding.sosButton.setOnClickListener(v -> showSosConfirmation());
-
-        // See SOS button click → reload from DB
         binding.seeSos.setOnClickListener(v -> loadAlerts());
 
         return root;
     }
 
-    private void navigateFragment(Fragment fragment, int menuItemId) {
-        AppCompatActivity activity = (AppCompatActivity) getActivity();
-        if (activity == null) return;
-
-        activity.getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit();
-
-        NavigationView navView = activity.findViewById(R.id.nav_view);
-        navView.setCheckedItem(menuItemId);
-
-        DrawerLayout drawer = activity.findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    private String getCurrentTimestamp() {
+        return new SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(new Date());
     }
 
     private void showSosConfirmation() {
+        if (getContext() == null) return;
         new AlertDialog.Builder(getContext())
                 .setTitle("Send SOS")
                 .setMessage("Are you sure you want to send an emergency alert?")
@@ -107,30 +91,63 @@ public class HomeFragment extends Fragment {
     }
 
     private void sendSosAlert() {
+        if (getContext() == null) return;
+
         String userName = "Shravani Patil";
         String userPhone = "+91 9876543210";
         String message = userName + " needs help! Contact: " + userPhone;
-        String timestamp = new SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(new Date());
+        String timestamp = getCurrentTimestamp();
 
         Alert newAlert = new Alert("SOS Alert!", message, timestamp);
 
         new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(requireContext());
-            db.alertDao().insert(newAlert);
+            try {
+                AppDatabase db = AppDatabase.getInstance(requireContext());
+                db.alertDao().insert(newAlert);
 
-            requireActivity().runOnUiThread(() -> {
-                Toast.makeText(getContext(), "SOS alert saved!", Toast.LENGTH_SHORT).show();
-                loadAlerts(); // ✅ refresh list instantly
-            });
+                requireActivity().runOnUiThread(() -> {
+                    Toast.makeText(getContext(), "SOS alert saved!", Toast.LENGTH_SHORT).show();
+                    loadAlerts();
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving SOS alert", e);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() ->
+                            Toast.makeText(getContext(), "Failed to save alert: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                    );
+                }
+            }
         }).start();
     }
 
     private void loadAlerts() {
         new Thread(() -> {
-            AppDatabase db = AppDatabase.getInstance(requireContext());
-            List<Alert> alerts = db.alertDao().getAllAlerts();
+            try {
+                AppDatabase db = AppDatabase.getInstance(requireContext());
+                List<Alert> alerts = db.alertDao().getAllAlerts();
 
-            requireActivity().runOnUiThread(() -> alertAdapter.updateData(alerts));
+                requireActivity().runOnUiThread(() -> {
+                    if (alertAdapter != null) {
+                        alertAdapter.updateData(alerts);
+                    } else {
+                        Log.w(TAG, "alertAdapter is null when updating data");
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading alerts from DB", e);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() ->
+                            Toast.makeText(getContext(), "Failed to load alerts: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                    );
+                }
+            }
         }).start();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Release binding to avoid leaks
+        binding = null;
     }
 }

@@ -27,6 +27,7 @@ navigationUi = "2.9.5"
 playServicesAuthVersion = "21.4.0"
 playServicesMaps = "19.2.0"
 playServicesNearby = "19.3.0"
+playServicesNearbyVersion = "21.1.0"
 recyclerview = "1.4.0"
 retrofit = "3.0.0"
 roomCommonJvm = "2.8.0"
@@ -73,6 +74,7 @@ navigation-fragment = { group = "androidx.navigation", name = "navigation-fragme
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 play-services-nearby = { module = "com.google.android.gms:play-services-nearby", version.ref = "playServicesNearby" }
+play-services-nearby-v2110 = { module = "com.google.android.gms:play-services-nearby", version.ref = "playServicesNearbyVersion" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 room-common-jvm = { group = "androidx.room", name = "room-common-jvm", version.ref = "roomCommonJvm" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
