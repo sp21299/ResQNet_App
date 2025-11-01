@@ -1,142 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/alertsFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    tools:context=".ui.alerts.AlertsFragment"
-    android:background="#F9FAFB">
+    android:background="@color/white"
+    tools:context=".ui.alerts.AlertsFragment">
 
-    <TextView
-        android:id="@+id/title"
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/alertsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Emergency Alerts"
-        android:textAlignment="center"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:paddingBottom="12dp" />
+        android:padding="16dp"
+        tools:ignore="MissingConstraints" />
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+    <!-- Empty view if no alerts -->
+    <TextView
+        android:id="@+id/emptyAlertsText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/no_alerts_available"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="MissingConstraints" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:dividerPadding="8dp">
+</androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- Alert 1 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:color/white"
-                android:elevation="3dp"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🚨 SOS Alert: Accident near MG Road"
-                    android:textStyle="bold"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Time: 10:42 AM | Distance: 0.8 km"
-                    android:textSize="14sp"
-                    android:textColor="#555555" />
-            </LinearLayout>
-
-            <!-- Alert 2 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:color/white"
-                android:elevation="3dp"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="⚠️ Flood Alert: Rising water levels in River Area"
-                    android:textStyle="bold"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Time: 09:15 AM | Distance: 2.3 km"
-                    android:textSize="14sp"
-                    android:textColor="#555555" />
-            </LinearLayout>
-
-            <!-- Alert 3 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:color/white"
-                android:elevation="3dp"
-                android:layout_marginBottom="10dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🔥 Fire Alert: Reported near Industrial Area"
-                    android:textStyle="bold"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Time: 08:30 AM | Distance: 1.5 km"
-                    android:textSize="14sp"
-                    android:textColor="#555555" />
-            </LinearLayout>
-
-        </LinearLayout>
-    </ScrollView>
-</LinearLayout>
-
-    <!--<?xml version="1.0" encoding="utf-8"?>-->
-<!--<androidx.constraintlayout.widget.ConstraintLayout-->
-<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
 <!--    xmlns:tools="http://schemas.android.com/tools"-->
-<!--    android:id="@+id/alertsFragment"-->
 <!--    android:layout_width="match_parent"-->
 <!--    android:layout_height="match_parent"-->
-<!--    android:background="@color/white"-->
-<!--    tools:context=".ui.alerts.AlertsFragment">-->
+<!--    android:orientation="vertical"-->
+<!--    android:padding="16dp"-->
+<!--    tools:context=".ui.alerts.AlertsFragment"-->
+<!--    android:background="#F9FAFB">-->
 
-
-<!--    <androidx.recyclerview.widget.RecyclerView-->
-<!--        android:id="@+id/alertsRecyclerView"-->
+<!--    <TextView-->
+<!--        android:id="@+id/title"-->
 <!--        android:layout_width="match_parent"-->
 <!--        android:layout_height="wrap_content"-->
-<!--        android:padding="16dp"-->
-<!--        tools:ignore="MissingConstraints" />-->
+<!--        android:text="Emergency Alerts"-->
+<!--        android:textAlignment="center"-->
+<!--        android:textSize="22sp"-->
+<!--        android:textStyle="bold"-->
+<!--        android:paddingBottom="12dp" />-->
 
-<!--    &lt;!&ndash; Empty view if no alerts &ndash;&gt;-->
-<!--    <TextView-->
-<!--        android:id="@+id/emptyAlertsText"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="@string/no_alerts_available"-->
-<!--        android:textColor="@android:color/darker_gray"-->
-<!--        android:textSize="16sp"-->
-<!--        android:visibility="gone"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        tools:ignore="MissingConstraints" />-->
+<!--    <ScrollView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent">-->
 
-<!--</androidx.constraintlayout.widget.ConstraintLayout>-->
+<!--        <LinearLayout-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="vertical"-->
+<!--            android:dividerPadding="8dp">-->
+
+<!--            &lt;!&ndash; Alert 1 &ndash;&gt;-->
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:padding="12dp"-->
+<!--                android:background="@android:color/white"-->
+<!--                android:elevation="3dp"-->
+<!--                android:layout_marginBottom="10dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="🚨 SOS Alert: Accident near MG Road"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:textSize="18sp" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Time: 10:42 AM | Distance: 0.8 km"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#555555" />-->
+<!--            </LinearLayout>-->
+
+<!--            &lt;!&ndash; Alert 2 &ndash;&gt;-->
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:padding="12dp"-->
+<!--                android:background="@android:color/white"-->
+<!--                android:elevation="3dp"-->
+<!--                android:layout_marginBottom="10dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="⚠️ Flood Alert: Rising water levels in River Area"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:textSize="18sp" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Time: 09:15 AM | Distance: 2.3 km"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#555555" />-->
+<!--            </LinearLayout>-->
+
+<!--            &lt;!&ndash; Alert 3 &ndash;&gt;-->
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:padding="12dp"-->
+<!--                android:background="@android:color/white"-->
+<!--                android:elevation="3dp"-->
+<!--                android:layout_marginBottom="10dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="🔥 Fire Alert: Reported near Industrial Area"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:textSize="18sp" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Time: 08:30 AM | Distance: 1.5 km"-->
+<!--                    android:textSize="14sp"-->
+<!--                    android:textColor="#555555" />-->
+<!--            </LinearLayout>-->
+
+<!--        </LinearLayout>-->
+<!--    </ScrollView>-->
+<!--</LinearLayout>-->
+

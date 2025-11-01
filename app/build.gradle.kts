@@ -52,9 +52,10 @@ dependencies {
     implementation("com.google.android.gms:play-services-nearby:19.3.0")
 
 
-
+    implementation("com.google.android.gms:play-services-maps:19.2.0")
     // Core Room
     implementation(libs.androidx.room.runtime.v281)
+    implementation(libs.play.services.location)
     kapt(libs.androidx.room.compiler.v281)       // for annotation processing
     implementation(libs.androidx.room.ktx) // Kotlin extensions (Coroutines support)
 

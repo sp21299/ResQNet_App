@@ -3,6 +3,7 @@ package com.example.resqnet_app;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,6 +11,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 
+import com.example.resqnet_app.service.SyncService;
 import com.example.resqnet_app.ui.alerts.AlertsFragment;
 import com.example.resqnet_app.ui.chat.ChatFragment;
 import com.example.resqnet_app.ui.home.HomeFragment;
@@ -28,19 +30,15 @@ public class home_activity extends AppCompatActivity {
 
         // Initialize the profile icon
         ImageView profileIcon = findViewById(R.id.profileIcon);
-
-        // Set click listener to open ProfileActivity
         profileIcon.setOnClickListener(v -> {
             Intent intent = new Intent(home_activity.this, profile_activity.class);
-
-            // Pass user data if needed
             intent.putExtra("name", "Shravani Patil");
             intent.putExtra("email", "shravani@example.com");
             intent.putExtra("birth", "01-01-2000");
             intent.putExtra("mobile", "+91 9876543210");
-
             startActivity(intent);
         });
+
         // Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -49,12 +47,15 @@ public class home_activity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         NavigationView navView = findViewById(R.id.nav_view);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close
+        );
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
         // Bottom Navigation
-        BottomNavigationView bottomNavigationView = findViewById(R.id.nav_view1); // Make sure this ID is for BottomNavigationView
+        BottomNavigationView bottomNavigationView = findViewById(R.id.nav_view1);
 
         // Load HomeFragment by default
         if (savedInstanceState == null) {
@@ -103,4 +104,14 @@ public class home_activity extends AppCompatActivity {
             return true;
         });
     }
+
+    // ✅ Correct place for onResume()
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Toast.makeText(this, "Checking for offline users to sync...", Toast.LENGTH_SHORT).show();
+        Intent syncIntent = new Intent(this, SyncService.class);
+        startService(syncIntent);
+    }
+
 }

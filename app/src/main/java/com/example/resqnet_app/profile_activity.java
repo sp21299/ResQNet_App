@@ -1,9 +1,7 @@
 package com.example.resqnet_app;
 
 import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -16,7 +14,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.resqnet_app.data.local.dao.UserDao;
 import com.example.resqnet_app.data.local.database.AppDatabase;
-import com.example.resqnet_app.data.local.entity.UserEntity;
+import com.example.resqnet_app.data.local.entity.User;
 
 public class profile_activity extends AppCompatActivity {
 
@@ -25,7 +23,7 @@ public class profile_activity extends AppCompatActivity {
     Button edit_button;
     private AppDatabase db;
     private UserDao userDao;
-    private UserEntity currentUser;
+    private User currentUser;
     @SuppressLint("WrongViewCast")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,7 +108,7 @@ public class profile_activity extends AppCompatActivity {
         address.setEnabled(editable);
     }
 
-    private void showUserData(UserEntity user) {
+    private void showUserData(User user) {
         profile_name.setText(user.getName());
         email_tv.setText(user.getEmail());
         birth_tv.setText(user.getBirth());

@@ -1,7 +1,10 @@
 package com.example.resqnet_app;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.widget.Button;
@@ -11,6 +14,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.resqnet_app.data.local.dao.UserDao;
+import com.example.resqnet_app.data.local.database.AppDatabase;
+import com.example.resqnet_app.data.local.entity.User;
+import com.example.resqnet_app.service.SyncService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,6 +37,10 @@ public class LoginActivity extends AppCompatActivity {
         // Initialize Firebase
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true)
+                .build();
+        db.setFirestoreSettings(settings);
 
         // Initialize UI
         loginEmail = findViewById(R.id.login_email);
@@ -37,15 +48,18 @@ public class LoginActivity extends AppCompatActivity {
         Button loginButton = findViewById(R.id.login);
         TextView registerRedirect = findViewById(R.id.RegisterRedirectText);
 
-        // Check if user is already logged in
+        // Check if already logged in (online or offline)
+        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean isLoggedInOffline = prefs.getBoolean("isLoggedInOffline", false);
         FirebaseUser currentUser = auth.getCurrentUser();
-        if (currentUser != null) {
+
+        if (currentUser != null || isLoggedInOffline) {
             startActivity(new Intent(LoginActivity.this, home_activity.class));
             finish();
             return;
         }
 
-        // Show toast from RegisterActivity if available
+        // Show toast if redirected from RegisterActivity
         String toastMsg = getIntent().getStringExtra("showToast");
         if (toastMsg != null) {
             Toast.makeText(this, toastMsg, Toast.LENGTH_LONG).show();
@@ -62,12 +76,19 @@ public class LoginActivity extends AppCompatActivity {
             String password = loginPassword.getText().toString().trim();
 
             if (validateEmail(email) && validatePassword(password)) {
-                loginUser(email, password);
+                if (isConnected()) {
+                    // Online login
+                    loginUserOnline(email, password);
+                } else {
+                    // Offline login
+                    loginUserOffline(email, password);
+                }
             }
         });
     }
 
-    private void loginUser(String email, String password) {
+    // -------------------- ONLINE LOGIN --------------------
+    private void loginUserOnline(String email, String password) {
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -81,12 +102,21 @@ public class LoginActivity extends AppCompatActivity {
                                         if (document.exists()) {
                                             String name = document.getString("name");
 
+                                            // Save user data locally
                                             SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                                            prefs.edit().putString("username", name).apply();
+                                            SharedPreferences.Editor editor = prefs.edit();
+                                            editor.putString("username", name);
+                                            editor.putBoolean("isLoggedInOffline", false);
+                                            editor.apply();
 
                                             Toast.makeText(LoginActivity.this, "Welcome " + name, Toast.LENGTH_LONG).show();
 
-                                            startActivity(new Intent(LoginActivity.this,sidebar_menu.class));
+                                            Intent syncIntent = new Intent(LoginActivity.this, SyncService.class);
+                                            startService(syncIntent);
+
+                                            Intent intent = new Intent(LoginActivity.this, home_activity.class);
+                                            intent.putExtra("openFragment", "home");
+                                            startActivity(intent);
                                             finish();
                                         } else {
                                             Toast.makeText(LoginActivity.this, "User profile not found!", Toast.LENGTH_LONG).show();
@@ -105,6 +135,35 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    // -------------------- OFFLINE LOGIN --------------------
+    private void loginUserOffline(String email, String password) {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+            UserDao userDao = db.userDao();
+            User user = userDao.getUserByEmail(email);
+
+            runOnUiThread(() -> {
+                if (user != null && user.getPassword().equals(password)) {
+                    SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString("username", user.getName());
+                    editor.putBoolean("isLoggedInOffline", true); // ✅ mark offline login
+                    editor.apply();
+
+                    Toast.makeText(LoginActivity.this, "Welcome (Offline) " + user.getName(), Toast.LENGTH_LONG).show();
+
+                    Intent intent = new Intent(LoginActivity.this, home_activity.class);
+                    intent.putExtra("openFragment", "home");
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(LoginActivity.this, "Invalid email or password (Offline Mode)", Toast.LENGTH_LONG).show();
+                }
+            });
+        }).start();
+    }
+
+    // -------------------- VALIDATION --------------------
     private boolean validateEmail(String email) {
         if (email.isEmpty()) {
             loginEmail.setError("Email can't be empty");
@@ -127,5 +186,15 @@ public class LoginActivity extends AppCompatActivity {
         }
         loginPassword.setError(null);
         return true;
+    }
+
+    // -------------------- INTERNET CHECK --------------------
+    private boolean isConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm != null) {
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            return activeNetwork != null && activeNetwork.isConnected();
+        }
+        return false;
     }
 }
