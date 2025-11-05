@@ -14,7 +14,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="0dp"
-            android:layout_height="100dp"
+            android:layout_height="80dp"
             android:background="#1E88E5"
             android:titleTextColor="@android:color/white"
             app:navigationIcon="@drawable/menu"
@@ -33,26 +33,36 @@
                 android:contentDescription="@string/person"
                 android:focusable="true"
                 android:src="@drawable/account_person"
-                tools:ignore="ImageContrastCheck,TouchTargetSizeCheck"
-                tools:layout_editor_absoluteX="362dp"
-                tools:layout_editor_absoluteY="30dp" />
-
-
+                tools:ignore="ImageContrastCheck,TouchTargetSizeCheck"/>
         </androidx.appcompat.widget.Toolbar>
 
-        <!-- Fragment Container -->
-        <FrameLayout
-            android:id="@+id/fragment_container"
+        <!-- ✅ Replace FrameLayout with NavHostFragment -->
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/nav_host_fragment_activity_home"
+            android:name="androidx.navigation.fragment.NavHostFragment"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            app:defaultNavHost="true"
+            app:navGraph="@navigation/mobile_navigation3"
             app:layout_constraintTop_toBottomOf="@id/toolbar"
-            app:layout_constraintBottom_toTopOf="@id/nav_view1"
+            app:layout_constraintBottom_toTopOf="@id/nav_view2"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent" />
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            tools:ignore="MissingConstraints">
+
+
+        </LinearLayout>
 
         <!-- Bottom Navigation -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/nav_view1"
+            android:id="@+id/nav_view2"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:menu="@menu/bottom_navigation_menu"

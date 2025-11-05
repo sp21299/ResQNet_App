@@ -2,20 +2,48 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 🌐 Internet & network permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- 📶 Wi-Fi -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- 📍 Location (required for Nearby Connections before Android 13) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- 🔵 Bluetooth (classic + modern) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <!-- Android 12+ -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADVERTISE"
+        android:required="false" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_CONNECT"
+        android:required="false" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:required="false" />
+
+    <!-- Android 13+ (Nearby Connections uses this for Wi-Fi P2P) -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation"
+        android:required="false"/>
+
+
+    <!-- ⚙️ Foreground service and wake lock -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Optional feature hint -->
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -26,6 +54,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Resqnet_app">
 
+        <!-- 🔔 Network receiver -->
         <receiver
             android:name=".service.NetworkReceiver"
             android:enabled="true"
@@ -35,54 +64,63 @@
             </intent-filter>
         </receiver>
 
+        <!-- 🔄 Sync service -->
         <service
             android:name=".service.SyncService"
             android:exported="false" />
 
+        <!-- 🟢 Nearby connections service (add this) -->
+        <service
+            android:name=".service.NearbyService"
+            android:exported="false" />
 
+        <!-- 🌍 Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBEECzUMNDTxQXRNg_2DNYci9LwzbXp7NA"/>
+            android:value="AIzaSyBEECzUMNDTxQXRNg_2DNYci9LwzbXp7NA" />
 
         <activity
             android:name=".profile_activity"
             android:exported="false" />
+
         <activity
             android:name=".FlashActivity"
-            android:exported="false">
+            android:exported="false" />
 
-
-        </activity>
         <activity
             android:name=".bottom"
             android:exported="false"
             android:label="@string/title_activity_bottom" />
+
         <activity
             android:name=".sidebar_menu"
             android:exported="false"
             android:label="@string/title_activity_sidebar_menu"
             android:theme="@style/Theme.Resqnet_app.NoActionBar" />
+
+        <!-- 🏠 Main entry activity -->
         <activity
             android:name=".home_activity"
-            android:exported="false"
-            android:theme="@style/Theme.Resqnet_app.NoActionBar" />
-
-        <activity
-            android:name=".LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
+
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="false" />
     </application>
-    <uses-feature android:name="android.hardware.location" android:required="false" />
 
 </manifest>

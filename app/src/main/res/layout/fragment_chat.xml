@@ -1,134 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
-    android:background="#F2F2F2"
-    tools:context=".ui.chat.ChatFragment">
+    android:background="#F8F9FA"
+    android:padding="8dp">
 
-    <!-- Title -->
+    <!-- Connected devices status -->
     <TextView
+        android:id="@+id/connectedDeviceName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Community Chat"
+        android:text="Searching for nearby devices..."
+        android:textColor="#000"
         android:textStyle="bold"
-        android:textSize="22sp"
-        android:gravity="center"
-        android:paddingBottom="10dp" />
+        android:padding="6dp"
+        android:textSize="16sp" />
 
-    <!-- Chat messages area -->
-    <ScrollView
+    <!-- chat messages -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewChat"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp">
+        android:padding="4dp"
+        android:clipToPadding="false" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Message from others -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:elevation="2dp"
-                android:padding="10dp"
-                android:layout_marginBottom="8dp"
-                android:layout_gravity="start"
-                android:layout_marginEnd="60dp"
-                android:backgroundTint="#E8EAF6">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🧍‍♂️ Riya: Is anyone near the bridge? Flood warning issued!"
-                    android:textSize="15sp" />
-            </LinearLayout>
-
-            <!-- Message from user -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#DCF8C6"
-                android:elevation="2dp"
-                android:padding="10dp"
-                android:layout_marginBottom="8dp"
-                android:layout_gravity="end"
-                android:layout_marginStart="60dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Shravani: Yes, I’m nearby and can help!"
-                    android:textSize="15sp" />
-            </LinearLayout>
-
-            <!-- Another incoming message -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:elevation="2dp"
-                android:padding="10dp"
-                android:layout_marginBottom="8dp"
-                android:layout_gravity="start"
-                android:layout_marginEnd="60dp"
-                android:backgroundTint="#E8EAF6">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🚑 Raj: I’ve informed rescue team!"
-                    android:textSize="15sp" />
-            </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- Input section -->
+    <!-- message input -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="8dp">
+        android:padding="4dp">
 
         <EditText
-            android:id="@+id/messageInput"
+            android:id="@+id/inputMessage"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="Type a message..."
+            android:background="@drawable/bg_edittext"
             android:padding="10dp"
-            android:background="@android:color/white"
-            android:elevation="2dp" />
+            android:textSize="16sp" />
 
-        <ImageButton
+        <Button
             android:id="@+id/sendButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@android:drawable/ic_menu_send"
-            android:background="@android:color/transparent"
-            android:contentDescription="Send" />
+            android:text="Send"
+            android:textAllCaps="false"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#2196F3"
+            android:textColor="@android:color/white" />
     </LinearLayout>
 </LinearLayout>
-
-    <!--<?xml version="1.0" encoding="utf-8"?>-->
-<!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:tools="http://schemas.android.com/tools"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="match_parent"-->
-<!--    tools:context=".ui.chat.ChatFragment">-->
-
-<!--    &lt;!&ndash; TODO: Update blank fragment layout &ndash;&gt;-->
-<!--    <TextView-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:text="@string/hello_blank_fragment" />-->
-
-<!--</FrameLayout>-->

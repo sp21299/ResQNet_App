@@ -1,110 +1,149 @@
 package com.example.resqnet_app.service;
 
+import android.app.Service;
+import android.content.Intent;
+import android.os.Binder;
+import android.os.IBinder;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.MutableLiveData;
+
+import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.connection.*;
 
-public class NearbyService {
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-    private final ConnectionsClient connectionsClient;
-    private final String userName;
-    private final String SERVICE_ID = "resqnet_service";
-    private final Strategy STRATEGY = Strategy.P2P_CLUSTER;
+public class NearbyService extends Service {
 
-    private String connectedEndpointId = null;
-    private OnSOSReceivedListener listener;
+    private static final String TAG = "NearbyService";
+    private static final Strategy STRATEGY = Strategy.P2P_STAR;
 
-    public NearbyService(ConnectionsClient client, String name) {
-        this.connectionsClient = client;
-        this.userName = name;
-    }
+    private final IBinder binder = new NearbyBinder();
 
-    public interface OnSOSReceivedListener {
-        void onSOSReceived(String message);
-    }
+    public final MutableLiveData<String> receivedMessage = new MutableLiveData<>();
+    public final MutableLiveData<List<String>> connectedDevices = new MutableLiveData<>(new ArrayList<>());
 
-    public void setOnSOSReceivedListener(OnSOSReceivedListener listener) {
-        this.listener = listener;
-    }
+    private String userName = "User";
+    private final Map<String, String> endpoints = new HashMap<>(); // endpointId -> friendlyName
 
-    // Start Advertising
-    public void startAdvertising() {
-        AdvertisingOptions options = new AdvertisingOptions.Builder().setStrategy(STRATEGY).build();
-        connectionsClient.startAdvertising(
-                        userName,
-                        SERVICE_ID,
-                        connectionLifecycleCallback,
-                        options
-                ).addOnSuccessListener(unused -> Log.d("Nearby", "Advertising started"))
-                .addOnFailureListener(e -> Log.e("Nearby", "Advertising failed: " + e.getMessage()));
-    }
-
-    // Start Discovery
-    public void startDiscovery() {
-        DiscoveryOptions options = new DiscoveryOptions.Builder().setStrategy(STRATEGY).build();
-        connectionsClient.startDiscovery(
-                        SERVICE_ID,
-                        endpointDiscoveryCallback,
-                        options
-                ).addOnSuccessListener(unused -> Log.d("Nearby", "Discovery started"))
-                .addOnFailureListener(e -> Log.e("Nearby", "Discovery failed: " + e.getMessage()));
-    }
-
-    private final ConnectionLifecycleCallback connectionLifecycleCallback = new ConnectionLifecycleCallback() {
-        @Override
-        public void onConnectionInitiated(String endpointId, ConnectionInfo connectionInfo) {
-            connectionsClient.acceptConnection(endpointId, payloadCallback);
-            connectedEndpointId = endpointId;
+    public class NearbyBinder extends Binder {
+        public NearbyService getService() {
+            return NearbyService.this;
         }
+    }
 
-        @Override
-        public void onConnectionResult(String endpointId, ConnectionResolution result) {
-            if (result.getStatus().isSuccess()) Log.d("Nearby", "Connected to " + endpointId);
-            else Log.e("Nearby", "Connection failed");
-        }
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
+    }
 
-        @Override
-        public void onDisconnected(String endpointId) {
-            Log.d("Nearby", "Disconnected: " + endpointId);
-        }
-    };
+    // Start advertising & discovery
+    public void startNearby(String name) {
+        userName = name;
+
+        // Advertising
+        Nearby.getConnectionsClient(this)
+                .startAdvertising(userName, getPackageName(), connectionLifecycleCallback,
+                        new AdvertisingOptions.Builder().setStrategy(STRATEGY).build())
+                .addOnSuccessListener(unused -> Log.d(TAG, "Advertising started"))
+                .addOnFailureListener(e -> Log.e(TAG, "Advertising failed", e));
+
+        // Discovery
+        Nearby.getConnectionsClient(this)
+                .startDiscovery(getPackageName(), endpointDiscoveryCallback,
+                        new DiscoveryOptions.Builder().setStrategy(STRATEGY).build())
+                .addOnSuccessListener(unused -> Log.d(TAG, "Discovery started"))
+                .addOnFailureListener(e -> Log.e(TAG, "Discovery failed", e));
+    }
 
     private final EndpointDiscoveryCallback endpointDiscoveryCallback = new EndpointDiscoveryCallback() {
         @Override
-        public void onEndpointFound(String endpointId, DiscoveredEndpointInfo info) {
-            Log.d("Nearby", "Found: " + info.getEndpointName());
-            connectionsClient.requestConnection(userName, endpointId, connectionLifecycleCallback);
+        public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
+            Log.d(TAG, "Endpoint found: " + info.getEndpointName() + " (" + endpointId + ")");
+            // Automatically request connection
+            Nearby.getConnectionsClient(getApplicationContext())
+                    .requestConnection(userName, endpointId, connectionLifecycleCallback)
+                    .addOnSuccessListener(unused -> Log.d(TAG, "Connection requested"))
+                    .addOnFailureListener(e -> Log.e(TAG, "Connection request failed", e));
         }
 
         @Override
-        public void onEndpointLost(String endpointId) {
-            Log.d("Nearby", "Lost: " + endpointId);
+        public void onEndpointLost(@NonNull String endpointId) {
+            Log.d(TAG, "Endpoint lost: " + endpointId);
+            endpoints.remove(endpointId);
+            updateConnectedDevices();
+        }
+    };
+
+    private final ConnectionLifecycleCallback connectionLifecycleCallback = new ConnectionLifecycleCallback() {
+        @Override
+        public void onConnectionInitiated(@NonNull String endpointId, @NonNull ConnectionInfo info) {
+            Log.d(TAG, "Connection initiated: " + info.getEndpointName());
+            endpoints.put(endpointId, info.getEndpointName());
+            updateConnectedDevices();
+
+            Nearby.getConnectionsClient(getApplicationContext())
+                    .acceptConnection(endpointId, payloadCallback);
+        }
+
+        @Override
+        public void onConnectionResult(@NonNull String endpointId, @NonNull ConnectionResolution result) {
+            if (result.getStatus().isSuccess()) {
+                Log.d(TAG, "Connected to: " + endpoints.get(endpointId));
+            } else {
+                endpoints.remove(endpointId);
+                updateConnectedDevices();
+                Log.e(TAG, "Connection failed with endpoint: " + endpointId);
+            }
+        }
+
+        @Override
+        public void onDisconnected(@NonNull String endpointId) {
+            Log.d(TAG, "Disconnected: " + endpointId);
+            endpoints.remove(endpointId);
+            updateConnectedDevices();
         }
     };
 
     private final PayloadCallback payloadCallback = new PayloadCallback() {
         @Override
-        public void onPayloadReceived(String endpointId, Payload payload) {
-            String received = new String(payload.asBytes());
-            Log.d("Nearby", "Message: " + received);
-
-            if (received.contains("SOS")) {
-                if (listener != null) listener.onSOSReceived(received);
+        public void onPayloadReceived(@NonNull String endpointId, @NonNull Payload payload) {
+            if (payload.getType() == Payload.Type.BYTES) {
+                String msg = new String(payload.asBytes(), StandardCharsets.UTF_8);
+                Log.d(TAG, "Message received from " + endpoints.get(endpointId) + ": " + msg);
+                receivedMessage.postValue(msg);
             }
         }
 
         @Override
-        public void onPayloadTransferUpdate(String endpointId, PayloadTransferUpdate update) {}
+        public void onPayloadTransferUpdate(@NonNull String endpointId, @NonNull PayloadTransferUpdate update) { }
     };
 
-    // Send SOS message
-    public void sendMessage(String msg) {
-        if (connectedEndpointId != null) {
-            Payload payload = Payload.fromBytes(msg.getBytes());
-            connectionsClient.sendPayload(connectedEndpointId, payload);
+    public void sendMessage(String message) {
+        if (endpoints.isEmpty()) return;
+
+        Payload payload = Payload.fromBytes(message.getBytes(StandardCharsets.UTF_8));
+        for (String endpointId : endpoints.keySet()) {
+            Nearby.getConnectionsClient(this).sendPayload(endpointId, payload)
+                    .addOnFailureListener(e -> Log.e(TAG, "Failed to send message to " + endpoints.get(endpointId), e));
         }
     }
 
+    private void updateConnectedDevices() {
+        connectedDevices.postValue(new ArrayList<>(endpoints.values()));
+    }
+
     public void stopAll() {
-        connectionsClient.stopAllEndpoints();
+        Nearby.getConnectionsClient(this).stopAllEndpoints();
+        Nearby.getConnectionsClient(this).stopAdvertising();
+        Nearby.getConnectionsClient(this).stopDiscovery();
+        endpoints.clear();
+        updateConnectedDevices();
+        Log.d(TAG, "Nearby stopped");
     }
 }
