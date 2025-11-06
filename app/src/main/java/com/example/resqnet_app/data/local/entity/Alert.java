@@ -6,15 +6,28 @@ import androidx.room.PrimaryKey;
 
 @Entity(tableName = "alerts")
 public class Alert {
+
     @PrimaryKey(autoGenerate = true)
     public int id;
 
-    @ColumnInfo(name = "type")
-    public String type;   // "SMS", "CALL", "ADMIN_ALERT", "BUZZER"
+    @ColumnInfo(name = "title")
+    public String title;
 
-    @ColumnInfo(name = "timestamp")
-    public long timestamp;
+    @ColumnInfo(name = "description")
+    public String description;
 
-    @ColumnInfo(name = "status")
-    public String status; // "sent", "failed", "pending_sync"
+    @ColumnInfo(name = "location")
+    public String location;
+
+    @ColumnInfo(name = "date")
+    public String date;
+
+    @ColumnInfo(name = "time")
+    public String time;
+
+    @ColumnInfo(name = "uid")
+    public String uid;
+
+    @ColumnInfo(name = "createdAt")
+    public long createdAt; // Firestore timestamp
 }

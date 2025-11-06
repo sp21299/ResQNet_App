@@ -4,14 +4,19 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+
+import com.example.resqnet_app.data.local.dao.AlertDao;
 import com.example.resqnet_app.data.local.dao.MessageDao;
 import com.example.resqnet_app.data.local.dao.UserDao;
+import com.example.resqnet_app.data.local.dao.SosAlertDao;
+import com.example.resqnet_app.data.local.entity.Alert;
 import com.example.resqnet_app.data.local.entity.Message;
 import com.example.resqnet_app.data.local.entity.User;
+import com.example.resqnet_app.data.local.entity.SosAlert;
 
 @Database(
-        entities = {User.class, Message.class},
-        version = 5, // 🔹 Incremented version number
+        entities = {User.class, Message.class, Alert.class, SosAlert.class}, // Added SosAlert
+        version = 7,  // Increment version since we added a new table
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -20,6 +25,8 @@ public abstract class AppDatabase extends RoomDatabase {
 
     public abstract UserDao userDao();
     public abstract MessageDao messageDao();
+    public abstract AlertDao alertDao();
+    public abstract SosAlertDao sosAlertDao(); // New DAO for SOS table
 
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
@@ -30,7 +37,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "resqnet_db"
                             )
-                            .fallbackToDestructiveMigration() // 🔹 Avoids migration crash
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }

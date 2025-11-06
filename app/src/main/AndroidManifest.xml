@@ -9,6 +9,9 @@
     <!-- 📶 Wi-Fi -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
 
     <!-- 📍 Location (required for Nearby Connections before Android 13) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

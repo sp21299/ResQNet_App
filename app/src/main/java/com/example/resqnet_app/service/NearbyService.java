@@ -31,6 +31,9 @@ public class NearbyService extends Service {
     private String userName = "User";
     private final Map<String, String> endpoints = new HashMap<>(); // endpointId -> friendlyName
 
+    // Track received message IDs to avoid loops
+    private final List<String> receivedMessageIds = new ArrayList<>();
+
     public class NearbyBinder extends Binder {
         public NearbyService getService() {
             return NearbyService.this;
@@ -65,7 +68,6 @@ public class NearbyService extends Service {
         @Override
         public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
             Log.d(TAG, "Endpoint found: " + info.getEndpointName() + " (" + endpointId + ")");
-            // Automatically request connection
             Nearby.getConnectionsClient(getApplicationContext())
                     .requestConnection(userName, endpointId, connectionLifecycleCallback)
                     .addOnSuccessListener(unused -> Log.d(TAG, "Connection requested"))
@@ -115,8 +117,24 @@ public class NearbyService extends Service {
         public void onPayloadReceived(@NonNull String endpointId, @NonNull Payload payload) {
             if (payload.getType() == Payload.Type.BYTES) {
                 String msg = new String(payload.asBytes(), StandardCharsets.UTF_8);
-                Log.d(TAG, "Message received from " + endpoints.get(endpointId) + ": " + msg);
-                receivedMessage.postValue(msg);
+
+                // Parse message ID if included (format: messageId|content)
+                String[] parts = msg.split("\\|", 2);
+                String messageId = parts.length > 1 ? parts[0] : null;
+                String content = parts.length > 1 ? parts[1] : msg;
+
+                if (messageId != null && !receivedMessageIds.contains(messageId)) {
+                    receivedMessageIds.add(messageId);
+                    receivedMessage.postValue(content);
+
+                    // Forward message to other devices
+                    forwardMessage(messageId, content, endpointId);
+                } else if (messageId == null) {
+                    // No message ID, treat as direct message
+                    receivedMessage.postValue(content);
+                }
+
+                Log.d(TAG, "Message received from " + endpoints.get(endpointId) + ": " + content);
             }
         }
 
@@ -127,10 +145,28 @@ public class NearbyService extends Service {
     public void sendMessage(String message) {
         if (endpoints.isEmpty()) return;
 
-        Payload payload = Payload.fromBytes(message.getBytes(StandardCharsets.UTF_8));
+        // Add unique message ID to avoid loops
+        String messageId = String.valueOf(System.currentTimeMillis());
+        receivedMessageIds.add(messageId);
+
+        String msgWithId = messageId + "|" + message;
+        Payload payload = Payload.fromBytes(msgWithId.getBytes(StandardCharsets.UTF_8));
+
         for (String endpointId : endpoints.keySet()) {
             Nearby.getConnectionsClient(this).sendPayload(endpointId, payload)
                     .addOnFailureListener(e -> Log.e(TAG, "Failed to send message to " + endpoints.get(endpointId), e));
+        }
+    }
+
+    // Forward received message to other endpoints (mesh)
+    private void forwardMessage(String messageId, String msgContent, String fromEndpointId) {
+        Payload payload = Payload.fromBytes((messageId + "|FORWARD|" + msgContent).getBytes(StandardCharsets.UTF_8));
+
+        for (String endpointId : endpoints.keySet()) {
+            if (!endpointId.equals(fromEndpointId)) {
+                Nearby.getConnectionsClient(this).sendPayload(endpointId, payload)
+                        .addOnFailureListener(e -> Log.e(TAG, "Forward failed to " + endpoints.get(endpointId), e));
+            }
         }
     }
 
