@@ -7,20 +7,24 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import com.example.resqnet_app.data.local.entity.User;
-//import com.example.resqnet_app.data.local.User;
 
 import java.util.List;
 
 @Dao
 public interface UserDao {
+
     @Insert
     void insert(User user);
+
     @Update
     void updateUser(User user);
+
     @Delete
     void deleteUser(User user);
+
     @Query("SELECT * FROM users")
     List<User> getAllUsers();
+
     @Query("SELECT * FROM users WHERE id = :id")
     User getUserById(int id);
 
@@ -30,8 +34,11 @@ public interface UserDao {
     @Query("SELECT * FROM users WHERE isSynced = 0")
     List<User> getUnsyncedUsers();
 
+    // ✅ Corrected: use the correct column name
+    @Query("SELECT name FROM users WHERE id = :uid LIMIT 1")
+    String getUsernameByUid(String uid);
+
+
     @Update
     void update(User user);
-
-
 }

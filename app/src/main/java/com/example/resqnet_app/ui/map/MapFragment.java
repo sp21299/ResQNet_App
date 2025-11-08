@@ -31,22 +31,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
-
-        // Initialize location client
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
-        // Get the map fragment
-        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                .findFragmentById(R.id.mapFragment);
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(this);
-        }
+        SupportMapFragment mapFragment =
+                (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.mapFragment);
+        if (mapFragment != null) mapFragment.getMapAsync(this);
 
-        // Handle "My Location" button
         Button btnMyLocation = view.findViewById(R.id.btnMyLocation);
         btnMyLocation.setOnClickListener(v -> getMyLocation());
 
@@ -61,34 +53,26 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void enableMyLocation() {
-        if (ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
         } else {
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    LOCATION_PERMISSION_REQUEST_CODE);
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
 
     private void getMyLocation() {
-        if (ActivityCompat.checkSelfPermission(requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    LOCATION_PERMISSION_REQUEST_CODE);
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
             return;
         }
 
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(location -> {
-                    if (location != null) {
-                        showMyLocationOnMap(location);
-                    } else {
-                        Toast.makeText(requireContext(), "Unable to get current location", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+            if (location != null) showMyLocationOnMap(location);
+            else Toast.makeText(requireContext(), "Unable to get location", Toast.LENGTH_SHORT).show();
+        }).addOnFailureListener(e ->
+                Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     private void showMyLocationOnMap(Location location) {
@@ -99,12 +83,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE &&
-                grantResults.length > 0 &&
-                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             enableMyLocation();
         } else {
             Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show();

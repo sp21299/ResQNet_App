@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.VIBRATE"/>
 
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <!-- 📍 Location (required for Nearby Connections before Android 13) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -104,18 +105,20 @@
         <!-- 🏠 Main entry activity -->
         <activity
             android:name=".home_activity"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleTop"
             android:configChanges="orientation|screenSize|keyboardHidden">
+
+        </activity>
+
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
 
         <activity
             android:name=".RegisterActivity"

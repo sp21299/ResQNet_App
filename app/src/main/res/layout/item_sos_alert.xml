@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:elevation="4dp"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/sos_alert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SOS ALERT"
+            android:textStyle="bold"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/sos_username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Username needs help"
+            android:layout_marginTop="4dp"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/sos_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location"
+            android:textColor="@android:color/holo_blue_dark"
+            android:autoLink="map"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:id="@+id/sos_date"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Date" />
+
+            <Button
+                android:id="@+id/button_help"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HELP" />
+
+            <Button
+                android:id="@+id/button_ack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ACKNOWLEDGE"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

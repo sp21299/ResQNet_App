@@ -185,16 +185,4 @@ public class home_activity extends AppCompatActivity {
     public NearbyService getNearbyService() {
         return nearbyService;
     }
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if (nearbyService != null) {
-            nearbyService.receivedMessage.observe(this, msg -> {
-                // Handle incoming message (e.g., show toast, update chat UI)
-                Toast.makeText(this, "Received: " + msg, Toast.LENGTH_SHORT).show();
-            });
-        }
-    }
-
 }

@@ -18,6 +18,7 @@ import com.example.resqnet_app.data.local.dao.UserDao;
 import com.example.resqnet_app.data.local.database.AppDatabase;
 import com.example.resqnet_app.data.local.entity.User;
 import com.example.resqnet_app.service.SyncService;
+import com.example.resqnet_app.utils.UserSessionManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -109,6 +110,10 @@ public class LoginActivity extends AppCompatActivity {
                                             editor.putBoolean("isLoggedInOffline", false);
                                             editor.apply();
 
+                                            // ✅ Added: also store username in session manager
+                                            UserSessionManager session = new UserSessionManager(LoginActivity.this);
+                                            session.saveUsername(name);
+
                                             Toast.makeText(LoginActivity.this, "Welcome " + name, Toast.LENGTH_LONG).show();
 
                                             Intent syncIntent = new Intent(LoginActivity.this, SyncService.class);
@@ -149,6 +154,10 @@ public class LoginActivity extends AppCompatActivity {
                     editor.putString("username", user.getName());
                     editor.putBoolean("isLoggedInOffline", true); // ✅ mark offline login
                     editor.apply();
+
+                    // ✅ Added: also store username in session manager
+                    UserSessionManager session = new UserSessionManager(LoginActivity.this);
+                    session.saveUsername(user.getName());
 
                     Toast.makeText(LoginActivity.this, "Welcome (Offline) " + user.getName(), Toast.LENGTH_LONG).show();
 
