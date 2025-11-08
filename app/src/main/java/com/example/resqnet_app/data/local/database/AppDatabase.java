@@ -16,7 +16,7 @@ import com.example.resqnet_app.data.local.entity.SosAlert;
 
 @Database(
         entities = {User.class, Message.class, Alert.class, SosAlert.class}, // Added SosAlert
-        version = 9,  // Increment version since we added a new table
+        version = 10,  // Increment version since we added a new table
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {

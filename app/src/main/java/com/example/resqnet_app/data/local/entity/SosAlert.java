@@ -23,6 +23,23 @@ public class SosAlert {
 
     // Getters and Setters
     public int getId() { return id; }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public boolean isSynced() {
+        return isSynced;
+    }
+
+    public void setSynced(boolean synced) {
+        isSynced = synced;
+    }
+
     public void setId(int id) { this.id = id; }
 
     public String getTitle() { return title; }

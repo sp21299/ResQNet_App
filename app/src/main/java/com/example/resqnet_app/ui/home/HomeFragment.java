@@ -34,9 +34,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 public class HomeFragment extends Fragment {
 
@@ -67,7 +66,7 @@ public class HomeFragment extends Fragment {
                 if (event != null) {
                     SosAlert alert = event.getContentIfNotHandled(); // Only handle once
                     if (alert != null) {
-                        addSosAlert(alert, true); // remote alert
+                        addSosAlert(alert, true);
                         Toast.makeText(requireContext(), "Remote SOS received!", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -92,7 +91,6 @@ public class HomeFragment extends Fragment {
 
         db = AppDatabase.getInstance(requireContext());
         sosAlertDao = db.sosAlertDao();
-
         firestore = FirebaseFirestore.getInstance();
 
         sosButton = view.findViewById(R.id.sosButton);
@@ -132,6 +130,9 @@ public class HomeFragment extends Fragment {
         // Load previous SOS alerts from Room
         loadSavedSosAlerts();
 
+        // Try syncing unsynced SOS alerts to Firestore when online
+        syncUnsyncedAlerts();
+
         return view;
     }
 
@@ -150,9 +151,11 @@ public class HomeFragment extends Fragment {
         String username = session.getUsername();
 
         SosAlert alert = new SosAlert();
+        alert.setUuid(UUID.randomUUID().toString()); // Unique ID for deduplication
         alert.setTitle("SOS ALERT");
         alert.setDescription(username + " needs help!");
         alert.setStatus("active");
+        alert.setSynced(false);
 
         Date now = new Date();
         alert.setDate(new SimpleDateFormat("yyyy-MM-dd").format(now));
@@ -173,53 +176,75 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    /** Add SOS to local list, DB, Firestore, and optionally send to nearby */
+    /** Add SOS to local list, DB, and optionally send to nearby or Firestore */
     private void addSosAlert(SosAlert alert, boolean isRemote) {
-        // 1️⃣ Add to list and update RecyclerView
+        // Add to list and update RecyclerView
         sosAlertList.add(0, alert);
         adapter.notifyItemInserted(0);
         activeRecyclerView.scrollToPosition(0);
 
-        // 2️⃣ Save to Room DB asynchronously
-        saveSosToDatabase(alert);
+        // Save to Room DB
+        new Thread(() -> sosAlertDao.insert(alert)).start();
 
-        // 3️⃣ Save to Firestore (if online)
-        if (!isRemote) {
+        if (isRemote) {
+            // If remote SOS is received, we just store it locally
+            return;
+        }
+
+        // Check network and act accordingly
+        if (isOnline()) {
             saveSosToFirestore(alert);
-            sendSOS(alert); // send via NearbyService
+        } else {
+            // Offline -> propagate via Nearby
+            if (isBound && nearbyService != null) {
+                nearbyService.sendSOS(alert.getDescription(), alert.getLatitude(), alert.getLongitude());
+            }
         }
     }
 
-    /** Save SOS alert to Room DB asynchronously */
-    private void saveSosToDatabase(SosAlert alert) {
-        new Thread(() -> sosAlertDao.insert(alert)).start();
-    }
-
-    /** Save SOS alert to Firestore */
+    /** Upload SOS to Firestore if not already uploaded */
     private void saveSosToFirestore(SosAlert alert) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("title", alert.getTitle());
-        data.put("description", alert.getDescription());
-        data.put("date", alert.getDate());
-        data.put("time", alert.getTime());
-        data.put("status", alert.getStatus());
-        data.put("latitude", alert.getLatitude());
-        data.put("longitude", alert.getLongitude());
-
         firestore.collection("sos_alerts")
-                .add(data)
-                .addOnSuccessListener(docRef -> {
-                    Toast.makeText(requireContext(), "SOS uploaded to Firestore", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to upload SOS: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                .whereEqualTo("uuid", alert.getUuid())
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (snapshot.isEmpty()) {
+                        // Upload, because no one else uploaded it yet
+                        firestore.collection("sos_alerts")
+                                .document(alert.getUuid())
+                                .set(alert)
+                                .addOnSuccessListener(doc -> {
+                                    alert.setSynced(true);
+                                    new Thread(() -> sosAlertDao.update(alert)).start();
+                                });
+                    } else {
+                        // Already uploaded by another device
+                        alert.setSynced(true);
+                        new Thread(() -> sosAlertDao.update(alert)).start();
+                    }
                 });
     }
 
-    /** Send SOS to nearby devices */
-    private void sendSOS(SosAlert alert) {
-        if (isBound && nearbyService != null) {
-            nearbyService.sendSOS(alert.getDescription(), alert.getLatitude(), alert.getLongitude());
+    /** Sync all unsynced alerts to Firestore when online */
+    private void syncUnsyncedAlerts() {
+        if (!isOnline()) return;
+        new Thread(() -> {
+            List<SosAlert> unsynced = sosAlertDao.getAlertsByStatusAndSynced(false);
+            for (SosAlert alert : unsynced) {
+                saveSosToFirestore(alert);
+            }
+        }).start();
+    }
+
+    /** Simple online check */
+    private boolean isOnline() {
+        try {
+            android.net.ConnectivityManager cm =
+                    (android.net.ConnectivityManager) requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            android.net.NetworkInfo netInfo = cm.getActiveNetworkInfo();
+            return netInfo != null && netInfo.isConnected();
+        } catch (Exception e) {
+            return false;
         }
     }
 

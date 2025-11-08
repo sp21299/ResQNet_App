@@ -48,4 +48,8 @@ public interface SosAlertDao {
     // Optional: Get alert by ID
     @Query("SELECT * FROM sos_alerts WHERE id = :id")
     SosAlert getAlertById(int id);
+
+    @Query("SELECT * FROM sos_alerts WHERE isSynced = :synced")
+    List<SosAlert> getAlertsByStatusAndSynced(boolean synced);
+
 }
