@@ -17,6 +17,10 @@ public class SosAlert {
     public double latitude;
     public double longitude;
 
+    public String uuid;
+
+    public boolean isSynced; // false = not yet uploaded to Firestore
+
     // Getters and Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

@@ -7,9 +7,6 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -17,33 +14,46 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.resqnet_app.R;
+import com.example.resqnet_app.data.local.dao.SosAlertDao;
+import com.example.resqnet_app.data.local.database.AppDatabase;
 import com.example.resqnet_app.data.local.entity.SosAlert;
 import com.example.resqnet_app.service.NearbyService;
+import com.example.resqnet_app.utils.Event;
 import com.example.resqnet_app.utils.UserSessionManager;
+import com.example.resqnet_app.viewmodel.SharedViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
 public class HomeFragment extends Fragment {
 
     private RecyclerView activeRecyclerView;
     private SosAlertAdapter adapter;
-    private final List<SosAlert> sosAlerts = new ArrayList<>();
     private Button sosButton;
 
     private NearbyService nearbyService;
     private boolean isBound = false;
     private FusedLocationProviderClient fusedLocationClient;
+    private SharedViewModel sharedViewModel;
+
+    private AppDatabase db;
+    private SosAlertDao sosAlertDao;
+    private FirebaseFirestore firestore;
+
+    private final List<SosAlert> sosAlertList = new ArrayList<>();
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -52,18 +62,14 @@ public class HomeFragment extends Fragment {
             nearbyService = binder.getService();
             isBound = true;
 
-            nearbyService.newSosAlert.observe(getViewLifecycleOwner(), alert -> {
-                if (alert != null) {
-                    Date now = new Date();
-                    if (alert.getDate() == null)
-                        alert.setDate(new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now));
-                    if (alert.getTime() == null)
-                        alert.setTime(new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(now));
-
-                    sosAlerts.add(0, alert);
-                    adapter.notifyItemInserted(0);
-                    activeRecyclerView.scrollToPosition(0);
-                    Toast.makeText(requireContext(), "Remote SOS received!", Toast.LENGTH_SHORT).show();
+            // Observe remote SOS alerts wrapped in Event
+            nearbyService.newSosAlert.observe(getViewLifecycleOwner(), event -> {
+                if (event != null) {
+                    SosAlert alert = event.getContentIfNotHandled(); // Only handle once
+                    if (alert != null) {
+                        addSosAlert(alert, true); // remote alert
+                        Toast.makeText(requireContext(), "Remote SOS received!", Toast.LENGTH_SHORT).show();
+                    }
                 }
             });
         }
@@ -76,17 +82,24 @@ public class HomeFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
+    public android.view.View onCreateView(@NonNull android.view.LayoutInflater inflater,
+                                          @Nullable android.view.ViewGroup container,
+                                          @Nullable Bundle savedInstanceState) {
+        android.view.View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        db = AppDatabase.getInstance(requireContext());
+        sosAlertDao = db.sosAlertDao();
+
+        firestore = FirebaseFirestore.getInstance();
 
         sosButton = view.findViewById(R.id.sosButton);
         activeRecyclerView = view.findViewById(R.id.activeSosRecyclerView);
         activeRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        adapter = new SosAlertAdapter(sosAlerts, new SosAlertAdapter.OnAlertActionListener() {
+        adapter = new SosAlertAdapter(sosAlertList, new SosAlertAdapter.OnAlertActionListener() {
             @Override
             public void onHelp(SosAlert sosAlert) {
                 Toast.makeText(requireContext(), "Help clicked for: " + sosAlert.getTitle(), Toast.LENGTH_SHORT).show();
@@ -100,11 +113,8 @@ public class HomeFragment extends Fragment {
             @Override
             public void onLocationClick(SosAlert sosAlert) {
                 if (sosAlert.getLatitude() != 0 && sosAlert.getLongitude() != 0) {
-                    Bundle bundle = new Bundle();
-                    bundle.putDouble("lat", sosAlert.getLatitude());
-                    bundle.putDouble("lon", sosAlert.getLongitude());
-                    Navigation.findNavController(requireView())
-                            .navigate(R.id.action_bottom_home1_to_bottom_map1, bundle);
+                    sharedViewModel.sosLocation.setValue(new LatLng(sosAlert.getLatitude(), sosAlert.getLongitude()));
+                    Toast.makeText(requireContext(), "Location updated. Check Map tab.", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(requireContext(), "Location not available", Toast.LENGTH_SHORT).show();
                 }
@@ -119,9 +129,22 @@ public class HomeFragment extends Fragment {
         Intent intent = new Intent(requireContext(), NearbyService.class);
         requireContext().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 
+        // Load previous SOS alerts from Room
+        loadSavedSosAlerts();
+
         return view;
     }
 
+    /** Load previous SOS alerts from Room DB */
+    private void loadSavedSosAlerts() {
+        sosAlertDao.getAllAlertsLive().observe(getViewLifecycleOwner(), alerts -> {
+            sosAlertList.clear();
+            sosAlertList.addAll(alerts);
+            adapter.notifyDataSetChanged();
+        });
+    }
+
+    /** Trigger local SOS */
     private void triggerSosAlert() {
         UserSessionManager session = new UserSessionManager(requireContext());
         String username = session.getUsername();
@@ -132,8 +155,8 @@ public class HomeFragment extends Fragment {
         alert.setStatus("active");
 
         Date now = new Date();
-        alert.setDate(new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now));
-        alert.setTime(new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(now));
+        alert.setDate(new SimpleDateFormat("yyyy-MM-dd").format(now));
+        alert.setTime(new SimpleDateFormat("HH:mm:ss").format(now));
 
         if (ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -142,21 +165,59 @@ public class HomeFragment extends Fragment {
                 if (location != null) {
                     alert.setLatitude(location.getLatitude());
                     alert.setLongitude(location.getLongitude());
-                } else {
-                    Toast.makeText(requireContext(), "Unable to fetch location", Toast.LENGTH_SHORT).show();
                 }
-                addAlertToList(alert);
+                addSosAlert(alert, false);
             });
         } else {
-            addAlertToList(alert);
+            addSosAlert(alert, false);
         }
     }
 
-    private void addAlertToList(SosAlert alert) {
-        sosAlerts.add(0, alert);
+    /** Add SOS to local list, DB, Firestore, and optionally send to nearby */
+    private void addSosAlert(SosAlert alert, boolean isRemote) {
+        // 1️⃣ Add to list and update RecyclerView
+        sosAlertList.add(0, alert);
         adapter.notifyItemInserted(0);
         activeRecyclerView.scrollToPosition(0);
 
+        // 2️⃣ Save to Room DB asynchronously
+        saveSosToDatabase(alert);
+
+        // 3️⃣ Save to Firestore (if online)
+        if (!isRemote) {
+            saveSosToFirestore(alert);
+            sendSOS(alert); // send via NearbyService
+        }
+    }
+
+    /** Save SOS alert to Room DB asynchronously */
+    private void saveSosToDatabase(SosAlert alert) {
+        new Thread(() -> sosAlertDao.insert(alert)).start();
+    }
+
+    /** Save SOS alert to Firestore */
+    private void saveSosToFirestore(SosAlert alert) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("title", alert.getTitle());
+        data.put("description", alert.getDescription());
+        data.put("date", alert.getDate());
+        data.put("time", alert.getTime());
+        data.put("status", alert.getStatus());
+        data.put("latitude", alert.getLatitude());
+        data.put("longitude", alert.getLongitude());
+
+        firestore.collection("sos_alerts")
+                .add(data)
+                .addOnSuccessListener(docRef -> {
+                    Toast.makeText(requireContext(), "SOS uploaded to Firestore", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to upload SOS: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /** Send SOS to nearby devices */
+    private void sendSOS(SosAlert alert) {
         if (isBound && nearbyService != null) {
             nearbyService.sendSOS(alert.getDescription(), alert.getLatitude(), alert.getLongitude());
         }

@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -45,14 +46,23 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
         holder.alertTitle.setText(alert.getTitle() != null ? alert.getTitle() : "SOS ALERT");
         holder.username.setText(alert.getDescription() != null ? alert.getDescription() : "No details");
         holder.location.setText(alert.getLocationText());
-        holder.location.setOnClickListener(v -> listener.onLocationClick(alert));
         holder.date.setText(alert.getDate() + " " + alert.getTime());
+
         holder.helpButton.setOnClickListener(v -> listener.onHelp(alert));
         holder.ackButton.setOnClickListener(v -> listener.onAcknowledge(alert));
+
+        // Only notify listener, do NOT switch tabs
+        holder.location.setOnClickListener(v -> {
+            listener.onLocationClick(alert);
+            Toast.makeText(holder.itemView.getContext(),
+                    "Location updated. Switch to Map tab to view.", Toast.LENGTH_SHORT).show();
+        });
     }
 
     @Override
-    public int getItemCount() { return sosAlertList.size(); }
+    public int getItemCount() {
+        return sosAlertList.size();
+    }
 
     static class SosAlertViewHolder extends RecyclerView.ViewHolder {
         TextView alertTitle, username, location, date;

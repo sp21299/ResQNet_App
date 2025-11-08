@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -14,38 +15,28 @@ import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.resqnet_app.data.local.entity.SosAlert;
+import com.example.resqnet_app.utils.Event;
 import com.google.android.gms.nearby.Nearby;
-import com.google.android.gms.nearby.connection.AdvertisingOptions;
-import com.google.android.gms.nearby.connection.ConnectionInfo;
-import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback;
-import com.google.android.gms.nearby.connection.ConnectionResolution;
-import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo;
-import com.google.android.gms.nearby.connection.EndpointDiscoveryCallback;
-import com.google.android.gms.nearby.connection.Payload;
-import com.google.android.gms.nearby.connection.PayloadCallback;
-import com.google.android.gms.nearby.connection.PayloadTransferUpdate;
-import com.google.android.gms.nearby.connection.Strategy;
-import com.google.android.gms.nearby.connection.DiscoveryOptions;
+import com.google.android.gms.nearby.connection.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class NearbyService extends Service {
 
     private static final String TAG = "NearbyService";
-    private static final Strategy STRATEGY = Strategy.P2P_STAR;
+    private static final Strategy STRATEGY = Strategy.P2P_CLUSTER;
 
     private final IBinder binder = new NearbyBinder();
     public final MutableLiveData<String> receivedMessage = new MutableLiveData<>();
     public final MutableLiveData<List<String>> connectedDevices = new MutableLiveData<>(new ArrayList<>());
-    public final MutableLiveData<SosAlert> newSosAlert = new MutableLiveData<>();
+    public final MutableLiveData<Event<SosAlert>> newSosAlert = new MutableLiveData<>();
 
     private String userName = "User";
     private final Map<String, String> endpoints = new HashMap<>();
-    private final List<String> receivedMessageIds = new ArrayList<>();
+    private final Set<String> receivedMessageIds = new HashSet<>();
+    private final Set<String> sentMessages = new HashSet<>();
+    private final Handler handler = new Handler();
 
     public class NearbyBinder extends Binder {
         public NearbyService getService() {
@@ -60,13 +51,10 @@ public class NearbyService extends Service {
 
     public void startNearby(String name) {
         userName = name;
-
-        // Check runtime permissions
         if (!checkPermissions()) {
             Log.e(TAG, "Missing required permissions!");
             return;
         }
-
         startAdvertising();
         startDiscovery();
     }
@@ -78,7 +66,8 @@ public class NearbyService extends Service {
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) == PackageManager.PERMISSION_GRANTED;
         } else {
-            return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+            return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         }
     }
 
@@ -90,7 +79,7 @@ public class NearbyService extends Service {
             endpoints.clear();
             updateConnectedDevices();
         } catch (Exception e) {
-            Log.e(TAG, "Error stopping Nearby activities: " + e.getMessage());
+            Log.e(TAG, "Error stopping Nearby: " + e.getMessage());
         }
     }
 
@@ -98,56 +87,41 @@ public class NearbyService extends Service {
         Nearby.getConnectionsClient(this)
                 .startAdvertising(userName, getPackageName(), connectionLifecycleCallback,
                         new AdvertisingOptions.Builder().setStrategy(STRATEGY).build())
-                .addOnSuccessListener(unused -> Log.d(TAG, "Advertising started successfully"))
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Advertising failed: " + e.getMessage());
-                    // Retry after 2 seconds
-                    postDelayed(this::startAdvertising, 2000);
-                });
+                .addOnSuccessListener(unused -> Log.d(TAG, "Advertising started"))
+                .addOnFailureListener(e -> handler.postDelayed(this::startAdvertising, 2000));
     }
 
     private void startDiscovery() {
         Nearby.getConnectionsClient(this)
                 .startDiscovery(getPackageName(), endpointDiscoveryCallback,
                         new DiscoveryOptions.Builder().setStrategy(STRATEGY).build())
-                .addOnSuccessListener(unused -> Log.d(TAG, "Discovery started successfully"))
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Discovery failed: " + e.getMessage());
-                    // Retry after 2 seconds
-                    postDelayed(this::startDiscovery, 2000);
-                });
+                .addOnSuccessListener(unused -> Log.d(TAG, "Discovery started"))
+                .addOnFailureListener(e -> handler.postDelayed(this::startDiscovery, 2000));
     }
 
     private final EndpointDiscoveryCallback endpointDiscoveryCallback = new EndpointDiscoveryCallback() {
         @Override
         public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
-            Log.d(TAG, "Endpoint found: " + info.getEndpointName());
+            Log.d(TAG, "Endpoint found: " + info.getEndpointName() + " ID: " + endpointId);
             attemptConnection(endpointId);
         }
 
         @Override
         public void onEndpointLost(@NonNull String endpointId) {
-            Log.d(TAG, "Endpoint lost: " + endpoints.get(endpointId));
             endpoints.remove(endpointId);
             updateConnectedDevices();
         }
     };
 
     private void attemptConnection(String endpointId) {
-        Log.d(TAG, "Attempting connection to: " + endpointId);
         Nearby.getConnectionsClient(this)
                 .requestConnection(userName, endpointId, connectionLifecycleCallback)
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Connection request failed: " + e.getMessage());
-                    // Retry after 2 seconds
-                    postDelayed(() -> attemptConnection(endpointId), 2000);
-                });
+                .addOnFailureListener(e -> handler.postDelayed(() -> attemptConnection(endpointId), 2000));
     }
 
     private final ConnectionLifecycleCallback connectionLifecycleCallback = new ConnectionLifecycleCallback() {
         @Override
         public void onConnectionInitiated(@NonNull String endpointId, @NonNull ConnectionInfo info) {
-            Log.d(TAG, "Connection initiated with " + info.getEndpointName());
             endpoints.put(endpointId, info.getEndpointName());
             updateConnectedDevices();
             Nearby.getConnectionsClient(getApplicationContext()).acceptConnection(endpointId, payloadCallback);
@@ -155,18 +129,17 @@ public class NearbyService extends Service {
 
         @Override
         public void onConnectionResult(@NonNull String endpointId, @NonNull ConnectionResolution result) {
-            if (result.getStatus().isSuccess()) {
-                Log.d(TAG, "Connection successful with " + endpoints.get(endpointId));
-            } else {
-                Log.e(TAG, "Connection failed for " + endpoints.get(endpointId));
+            if (!result.getStatus().isSuccess()) {
                 endpoints.remove(endpointId);
                 updateConnectedDevices();
+            } else {
+                // Send all unsent messages to this endpoint
+                for (String msg : sentMessages) sendPayloadToEndpoint(endpointId, msg);
             }
         }
 
         @Override
         public void onDisconnected(@NonNull String endpointId) {
-            Log.d(TAG, "Disconnected from " + endpoints.get(endpointId));
             endpoints.remove(endpointId);
             updateConnectedDevices();
         }
@@ -178,16 +151,25 @@ public class NearbyService extends Service {
             if (payload.getType() == Payload.Type.BYTES) {
                 String msg = new String(payload.asBytes(), StandardCharsets.UTF_8);
 
-                if (msg.startsWith("SOS|")) {
-                    String desc = msg.substring(4);
-                    SosAlert alert = new SosAlert();
-                    alert.setTitle("SOS ALERT");
-                    alert.setDescription(desc);
-                    alert.setStatus("active");
-                    newSosAlert.postValue(alert);
-                } else {
-                    if (!receivedMessageIds.contains(msg)) {
-                        receivedMessageIds.add(msg);
+                if (!receivedMessageIds.contains(msg)) {
+                    receivedMessageIds.add(msg);
+
+                    if (msg.startsWith("SOS|")) {
+                        String[] parts = msg.split("\\|");
+                        if (parts.length >= 3) {
+                            String desc = parts[1];
+                            String[] latLon = parts[2].split(",");
+                            double lat = 0, lon = 0;
+                            try { lat = Double.parseDouble(latLon[0]); lon = Double.parseDouble(latLon[1]); } catch (Exception ignored) {}
+                            SosAlert alert = new SosAlert();
+                            alert.setTitle("SOS ALERT");
+                            alert.setDescription(desc);
+                            alert.setLatitude(lat);
+                            alert.setLongitude(lon);
+                            alert.setStatus("active");
+                            newSosAlert.postValue(new Event<>(alert));
+                        }
+                    } else {
                         receivedMessage.postValue(msg);
                     }
                 }
@@ -198,29 +180,26 @@ public class NearbyService extends Service {
         public void onPayloadTransferUpdate(@NonNull String endpointId, @NonNull PayloadTransferUpdate update) {}
     };
 
+    private void sendPayloadToAll(String msg) {
+        if (!sentMessages.contains(msg)) sentMessages.add(msg);
+        for (String endpointId : endpoints.keySet()) sendPayloadToEndpoint(endpointId, msg);
+    }
+
+    private void sendPayloadToEndpoint(String endpointId, String msg) {
+        Payload payload = Payload.fromBytes(msg.getBytes(StandardCharsets.UTF_8));
+        Nearby.getConnectionsClient(this).sendPayload(endpointId, payload);
+    }
+
     public void sendMessage(String message) {
-        if (endpoints.isEmpty()) return;
-        receivedMessageIds.add(message);
-        Payload payload = Payload.fromBytes(message.getBytes(StandardCharsets.UTF_8));
-        for (String endpointId : endpoints.keySet()) {
-            Nearby.getConnectionsClient(this).sendPayload(endpointId, payload);
-        }
+        sendPayloadToAll(message);
     }
 
     public void sendSOS(String message, double latitude, double longitude) {
-        if (endpoints.isEmpty()) return;
         String sosMessage = "SOS|" + message + "|" + latitude + "," + longitude;
-        Payload payload = Payload.fromBytes(sosMessage.getBytes(StandardCharsets.UTF_8));
-        for (String endpointId : endpoints.keySet()) {
-            Nearby.getConnectionsClient(this).sendPayload(endpointId, payload);
-        }
+        sendPayloadToAll(sosMessage);
     }
 
     private void updateConnectedDevices() {
         connectedDevices.postValue(new ArrayList<>(endpoints.values()));
-    }
-
-    private void postDelayed(Runnable runnable, long delayMillis) {
-        new android.os.Handler(getMainLooper()).postDelayed(runnable, delayMillis);
     }
 }
