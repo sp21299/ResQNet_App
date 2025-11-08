@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <item name="alertsRecyclerView" type="id"/>
-    <item name="emptyAlertsText" type="id"/>
-    <item name="msg_sender" type="id" />
-    <item name="msg_content" type="id" />
-</resources>

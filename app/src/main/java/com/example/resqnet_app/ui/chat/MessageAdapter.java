@@ -7,41 +7,63 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.resqnet_app.R;
 import com.example.resqnet_app.data.local.entity.Message;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
-public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.VH> {
+public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
-    private final List<Message> items;
+    private final List<Message> messageList;
 
-    public MessageAdapter(List<Message> items) { this.items = items; }
+    public MessageAdapter(List<Message> messageList) {
+        this.messageList = messageList;
+    }
 
     @NonNull
     @Override
-    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_message, parent, false);
-        return new VH(v);
+    public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_message, parent, false);
+        return new MessageViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH holder, int position) {
-        Message m = items.get(position);
-        holder.sender.setText(m.getSenderName());
-        holder.content.setText(m.getContent());
-        // simple visual: right/left alignment could be added but keep simple
+    public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
+        Message message = messageList.get(position);
+
+        // Sender
+        holder.sender.setText(message.getSenderName() != null ? message.getSenderName() : "Unknown");
+
+        // Message content
+        holder.content.setText(message.getContent() != null ? message.getContent() : "");
+
+        // Timestamp (assuming Message entity has a 'createdAt' field in milliseconds)
+        if (message.getTimestamp() > 0) {
+            String time = new SimpleDateFormat("HH:mm", Locale.getDefault())
+                    .format(message.getTimestamp());
+            holder.time.setText(time);
+        } else {
+            holder.time.setText("");
+        }
     }
 
     @Override
-    public int getItemCount() { return items.size(); }
+    public int getItemCount() {
+        return messageList.size();
+    }
 
-    static class VH extends RecyclerView.ViewHolder {
-        TextView sender, content;
-        VH(@NonNull View itemView) {
+    static class MessageViewHolder extends RecyclerView.ViewHolder {
+        TextView sender, content, time;
+
+        public MessageViewHolder(@NonNull View itemView) {
             super(itemView);
-            sender = itemView.findViewById(R.id.msg_sender);
-            content = itemView.findViewById(R.id.msg_content);
+            sender = itemView.findViewById(R.id.textSender);
+            content = itemView.findViewById(R.id.textMessage);
+            time = itemView.findViewById(R.id.textTime);
         }
     }
 }

@@ -1,24 +1,21 @@
 package com.example.resqnet_app.service;
 
+import android.Manifest;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.hardware.camera2.CameraManager;
-import android.media.MediaPlayer;
+import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.resqnet_app.R;
 import com.example.resqnet_app.data.local.entity.SosAlert;
 import com.google.android.gms.nearby.Nearby;
+import com.google.android.gms.nearby.connection.AdvertisingOptions;
 import com.google.android.gms.nearby.connection.ConnectionInfo;
 import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback;
 import com.google.android.gms.nearby.connection.ConnectionResolution;
@@ -28,7 +25,6 @@ import com.google.android.gms.nearby.connection.Payload;
 import com.google.android.gms.nearby.connection.PayloadCallback;
 import com.google.android.gms.nearby.connection.PayloadTransferUpdate;
 import com.google.android.gms.nearby.connection.Strategy;
-import com.google.android.gms.nearby.connection.AdvertisingOptions;
 import com.google.android.gms.nearby.connection.DiscoveryOptions;
 
 import java.nio.charset.StandardCharsets;
@@ -64,8 +60,26 @@ public class NearbyService extends Service {
 
     public void startNearby(String name) {
         userName = name;
+
+        // Check runtime permissions
+        if (!checkPermissions()) {
+            Log.e(TAG, "Missing required permissions!");
+            return;
+        }
+
         startAdvertising();
         startDiscovery();
+    }
+
+    private boolean checkPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES) == PackageManager.PERMISSION_GRANTED;
+        } else {
+            return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        }
     }
 
     public void stopAll() {
@@ -73,6 +87,8 @@ public class NearbyService extends Service {
             Nearby.getConnectionsClient(this).stopAllEndpoints();
             Nearby.getConnectionsClient(this).stopAdvertising();
             Nearby.getConnectionsClient(this).stopDiscovery();
+            endpoints.clear();
+            updateConnectedDevices();
         } catch (Exception e) {
             Log.e(TAG, "Error stopping Nearby activities: " + e.getMessage());
         }
@@ -82,40 +98,56 @@ public class NearbyService extends Service {
         Nearby.getConnectionsClient(this)
                 .startAdvertising(userName, getPackageName(), connectionLifecycleCallback,
                         new AdvertisingOptions.Builder().setStrategy(STRATEGY).build())
-                .addOnSuccessListener(unused -> Log.d(TAG, "Advertising started"))
-                .addOnFailureListener(e -> Log.e(TAG, "Advertising failed: " + e.getMessage()));
+                .addOnSuccessListener(unused -> Log.d(TAG, "Advertising started successfully"))
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Advertising failed: " + e.getMessage());
+                    // Retry after 2 seconds
+                    postDelayed(this::startAdvertising, 2000);
+                });
     }
 
     private void startDiscovery() {
         Nearby.getConnectionsClient(this)
                 .startDiscovery(getPackageName(), endpointDiscoveryCallback,
                         new DiscoveryOptions.Builder().setStrategy(STRATEGY).build())
-                .addOnSuccessListener(unused -> Log.d(TAG, "Discovery started"))
-                .addOnFailureListener(e -> Log.e(TAG, "Discovery failed: " + e.getMessage()));
+                .addOnSuccessListener(unused -> Log.d(TAG, "Discovery started successfully"))
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Discovery failed: " + e.getMessage());
+                    // Retry after 2 seconds
+                    postDelayed(this::startDiscovery, 2000);
+                });
     }
 
     private final EndpointDiscoveryCallback endpointDiscoveryCallback = new EndpointDiscoveryCallback() {
         @Override
         public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
+            Log.d(TAG, "Endpoint found: " + info.getEndpointName());
             attemptConnection(endpointId);
         }
 
         @Override
         public void onEndpointLost(@NonNull String endpointId) {
+            Log.d(TAG, "Endpoint lost: " + endpoints.get(endpointId));
             endpoints.remove(endpointId);
             updateConnectedDevices();
         }
     };
 
     private void attemptConnection(String endpointId) {
+        Log.d(TAG, "Attempting connection to: " + endpointId);
         Nearby.getConnectionsClient(this)
                 .requestConnection(userName, endpointId, connectionLifecycleCallback)
-                .addOnFailureListener(e -> Log.e(TAG, "Connection failed: " + e.getMessage()));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Connection request failed: " + e.getMessage());
+                    // Retry after 2 seconds
+                    postDelayed(() -> attemptConnection(endpointId), 2000);
+                });
     }
 
     private final ConnectionLifecycleCallback connectionLifecycleCallback = new ConnectionLifecycleCallback() {
         @Override
         public void onConnectionInitiated(@NonNull String endpointId, @NonNull ConnectionInfo info) {
+            Log.d(TAG, "Connection initiated with " + info.getEndpointName());
             endpoints.put(endpointId, info.getEndpointName());
             updateConnectedDevices();
             Nearby.getConnectionsClient(getApplicationContext()).acceptConnection(endpointId, payloadCallback);
@@ -123,7 +155,10 @@ public class NearbyService extends Service {
 
         @Override
         public void onConnectionResult(@NonNull String endpointId, @NonNull ConnectionResolution result) {
-            if (!result.getStatus().isSuccess()) {
+            if (result.getStatus().isSuccess()) {
+                Log.d(TAG, "Connection successful with " + endpoints.get(endpointId));
+            } else {
+                Log.e(TAG, "Connection failed for " + endpoints.get(endpointId));
                 endpoints.remove(endpointId);
                 updateConnectedDevices();
             }
@@ -131,6 +166,7 @@ public class NearbyService extends Service {
 
         @Override
         public void onDisconnected(@NonNull String endpointId) {
+            Log.d(TAG, "Disconnected from " + endpoints.get(endpointId));
             endpoints.remove(endpointId);
             updateConnectedDevices();
         }
@@ -142,7 +178,6 @@ public class NearbyService extends Service {
             if (payload.getType() == Payload.Type.BYTES) {
                 String msg = new String(payload.asBytes(), StandardCharsets.UTF_8);
 
-                // If it's a SOS message
                 if (msg.startsWith("SOS|")) {
                     String desc = msg.substring(4);
                     SosAlert alert = new SosAlert();
@@ -151,7 +186,6 @@ public class NearbyService extends Service {
                     alert.setStatus("active");
                     newSosAlert.postValue(alert);
                 } else {
-                    // Normal chat message
                     if (!receivedMessageIds.contains(msg)) {
                         receivedMessageIds.add(msg);
                         receivedMessage.postValue(msg);
@@ -173,10 +207,9 @@ public class NearbyService extends Service {
         }
     }
 
-    // ✅ Send SOS to nearby devices
-    public void sendSOS(String message) {
+    public void sendSOS(String message, double latitude, double longitude) {
         if (endpoints.isEmpty()) return;
-        String sosMessage = "SOS|" + message; // Prefix so receivers know it's SOS
+        String sosMessage = "SOS|" + message + "|" + latitude + "," + longitude;
         Payload payload = Payload.fromBytes(sosMessage.getBytes(StandardCharsets.UTF_8));
         for (String endpointId : endpoints.keySet()) {
             Nearby.getConnectionsClient(this).sendPayload(endpointId, payload);
@@ -185,5 +218,9 @@ public class NearbyService extends Service {
 
     private void updateConnectedDevices() {
         connectedDevices.postValue(new ArrayList<>(endpoints.values()));
+    }
+
+    private void postDelayed(Runnable runnable, long delayMillis) {
+        new android.os.Handler(getMainLooper()).postDelayed(runnable, delayMillis);
     }
 }

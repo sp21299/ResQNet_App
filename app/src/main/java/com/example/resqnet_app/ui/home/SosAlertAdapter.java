@@ -22,6 +22,7 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
     public interface OnAlertActionListener {
         void onHelp(SosAlert sosAlert);
         void onAcknowledge(SosAlert sosAlert);
+        void onLocationClick(SosAlert sosAlert);
     }
 
     public SosAlertAdapter(List<SosAlert> sosAlertList, OnAlertActionListener listener) {
@@ -41,25 +42,17 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
     public void onBindViewHolder(@NonNull SosAlertViewHolder holder, int position) {
         SosAlert alert = sosAlertList.get(position);
 
-        // ✅ Title and Description
         holder.alertTitle.setText(alert.getTitle() != null ? alert.getTitle() : "SOS ALERT");
         holder.username.setText(alert.getDescription() != null ? alert.getDescription() : "No details");
-
-        // ✅ Location
-        holder.location.setText(alert.getLocation() != null ? alert.getLocation() : "Location unavailable");
-
-        // ✅ Date + Time
+        holder.location.setText(alert.getLocationText());
+        holder.location.setOnClickListener(v -> listener.onLocationClick(alert));
         holder.date.setText(alert.getDate() + " " + alert.getTime());
-
-        // ✅ Button Actions
         holder.helpButton.setOnClickListener(v -> listener.onHelp(alert));
         holder.ackButton.setOnClickListener(v -> listener.onAcknowledge(alert));
     }
 
     @Override
-    public int getItemCount() {
-        return sosAlertList.size();
-    }
+    public int getItemCount() { return sosAlertList.size(); }
 
     static class SosAlertViewHolder extends RecyclerView.ViewHolder {
         TextView alertTitle, username, location, date;

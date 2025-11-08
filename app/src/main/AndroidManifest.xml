@@ -2,27 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 🌐 Internet & network permissions -->
+    <!-- 🌐 Internet & network -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- 📶 Wi-Fi -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.VIBRATE"/>
-
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <!-- 📍 Location (required for Nearby Connections before Android 13) -->
+    <!-- 📍 Location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- 🔵 Bluetooth (classic + modern) -->
+    <!-- 🔵 Bluetooth classic & modern -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
-    <!-- Android 12+ -->
+    <!-- Android 12+ Bluetooth -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_ADVERTISE"
         android:required="false" />
@@ -33,17 +25,24 @@
         android:name="android.permission.BLUETOOTH_SCAN"
         android:required="false" />
 
-    <!-- Android 13+ (Nearby Connections uses this for Wi-Fi P2P) -->
-    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+    <!-- Android 13+ Nearby Wi-Fi devices -->
+    <uses-permission
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
         android:usesPermissionFlags="neverForLocation"
-        android:required="false"/>
+        android:required="false" />
 
+    <!-- 📶 Wi-Fi -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
-    <!-- ⚙️ Foreground service and wake lock -->
+    <!-- ⚙️ Foreground service & wake lock -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Optional feature hint -->
+    <!-- 🔔 Vibrate -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Optional feature -->
     <uses-feature
         android:name="android.hardware.location"
         android:required="false" />
@@ -68,12 +67,10 @@
             </intent-filter>
         </receiver>
 
-        <!-- 🔄 Sync service -->
+        <!-- 🔄 Services -->
         <service
             android:name=".service.SyncService"
             android:exported="false" />
-
-        <!-- 🟢 Nearby connections service (add this) -->
         <service
             android:name=".service.NearbyService"
             android:exported="false" />
@@ -83,6 +80,7 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBEECzUMNDTxQXRNg_2DNYci9LwzbXp7NA" />
 
+        <!-- 🏠 Activities -->
         <activity
             android:name=".profile_activity"
             android:exported="false" />
@@ -102,14 +100,11 @@
             android:label="@string/title_activity_sidebar_menu"
             android:theme="@style/Theme.Resqnet_app.NoActionBar" />
 
-        <!-- 🏠 Main entry activity -->
         <activity
             android:name=".home_activity"
             android:exported="false"
             android:launchMode="singleTop"
-            android:configChanges="orientation|screenSize|keyboardHidden">
-
-        </activity>
+            android:configChanges="orientation|screenSize|keyboardHidden" />
 
         <activity
             android:name=".LoginActivity"
@@ -128,5 +123,4 @@
             android:name=".MainActivity"
             android:exported="false" />
     </application>
-
 </manifest>

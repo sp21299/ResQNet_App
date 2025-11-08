@@ -1,15 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/bottom_home1">
+    app:startDestination="@id/bottom_home1">
 
     <fragment
         android:id="@+id/bottom_home1"
         android:name="com.example.resqnet_app.ui.home.HomeFragment"
         android:label="@string/home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_bottom_home1_to_bottom_map1"
+            app:destination="@id/bottom_map1" />
+    </fragment>
 
     <fragment
         android:id="@+id/bottom_alert1"
