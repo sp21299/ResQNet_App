@@ -10,30 +10,38 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- 🔵 Bluetooth classic & modern -->
+    <!-- 🔵 Bluetooth -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
-    <!-- Android 12+ Bluetooth -->
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_ADVERTISE"
-        android:required="false" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_CONNECT"
-        android:required="false" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        android:required="false" />
+    <!-- Android 12+ Bluetooth permissions -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
 
     <!-- Android 13+ Nearby Wi-Fi devices -->
     <uses-permission
         android:name="android.permission.NEARBY_WIFI_DEVICES"
-        android:usesPermissionFlags="neverForLocation"
-        android:required="false" />
+        android:usesPermissionFlags="neverForLocation" />
 
     <!-- 📶 Wi-Fi -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- ⚙️ Foreground service & wake lock -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- 🔔 Vibrate -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
+
+    <!-- Optional features -->
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
     <!-- ⚙️ Foreground service & wake lock -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -46,6 +54,9 @@
     <uses-feature
         android:name="android.hardware.location"
         android:required="false" />
+
+    <!-- Add this permission so startForeground(...) with connectedDevice type is allowed on Android 14+ -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
     <application
         android:allowBackup="true"
@@ -69,11 +80,13 @@
 
         <!-- 🔄 Services -->
         <service
-            android:name=".service.SyncService"
-            android:exported="false" />
-        <service
             android:name=".service.NearbyService"
-            android:exported="false" />
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|dataSync"
+            tools:ignore="ForegroundServicePermission" />
+
+
 
         <!-- 🌍 Google Maps API Key -->
         <meta-data

@@ -1,0 +1,58 @@
+// Declare MediaPlayer and Vibrator at class level (you already have these)
+private MediaPlayer sosPlayer;
+private Vibrator vibrator;
+
+// Call this method to trigger SOS alert with buzzer
+private void triggerSOSAlert(String message) {
+    // Start vibration
+    if (vibrator != null) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0, 600, 400, 600}, 0));
+        } else vibrator.vibrate(new long[]{0, 600, 400, 600}, 0);
+    }
+
+    // Start buzzer sound
+    try {
+        if (sosPlayer == null) {
+            // Use your raw buzzer file
+            sosPlayer = MediaPlayer.create(this, R.raw.buzzer_sound);
+            if (sosPlayer != null) sosPlayer.setLooping(true); // loop until stopped
+        }
+        if (sosPlayer != null && !sosPlayer.isPlaying()) sosPlayer.start();
+    } catch (Exception e) {
+        Log.w(TAG, "Failed to start sosPlayer", e);
+    }
+
+    // Show notification
+    try {
+        NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("🚨 SOS Alert Received!")
+                .setContentText(message)
+                .setSmallIcon(android.R.drawable.stat_notify_error)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) manager.notify(2, b.build());
+    } catch (Exception e) {
+        Log.w(TAG, "Failed to show SOS notification", e);
+    }
+
+    Log.d(TAG, "SOS ALERT triggered: " + message);
+}
+
+// Call this method when user presses Help/Acknowledge button
+public void stopSOSAlert() {
+    // Stop buzzer sound
+    try {
+        if (sosPlayer != null) {
+            if (sosPlayer.isPlaying()) sosPlayer.stop();
+            sosPlayer.release();
+            sosPlayer = null;
+        }
+    } catch (Exception e) {
+        Log.w(TAG, "stopSOSAlert media error", e);
+    }
+
+    // Stop vibration
+    if (vibrator != null) vibrator.cancel();
+}

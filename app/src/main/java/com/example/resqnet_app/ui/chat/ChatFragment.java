@@ -12,7 +12,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -59,7 +58,7 @@ public class ChatFragment extends Fragment {
             recyclerView.scrollToPosition(adapter.getItemCount() - 1);
         });
 
-        // Get NearbyService
+        // Get NearbyService from main activity
         nearbyService = ((home_activity) requireActivity()).getNearbyService();
 
         if (nearbyService != null) {
@@ -71,10 +70,21 @@ public class ChatFragment extends Fragment {
                 }
             });
 
-            // Observe connected device names
+            // Observe connected device names dynamically
             nearbyService.connectedDevices.observe(getViewLifecycleOwner(), devices -> {
-                connectedDevicesText.setText("Connected: " + String.join(", ", devices));
+                if (devices != null && !devices.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("Connected Devices:\n");
+                    for (String name : devices) {
+                        sb.append("• ").append(name).append("\n");
+                    }
+                    connectedDevicesText.setText(sb.toString().trim());
+                } else {
+                    connectedDevicesText.setText("No connected devices");
+                }
             });
+        } else {
+            connectedDevicesText.setText("Nearby service not initialized");
         }
 
         sendButton.setOnClickListener(v -> sendMessage());
