@@ -1,5 +1,7 @@
 package com.example.resqnet_app.ui.home;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,20 +46,23 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
         SosAlert alert = sosAlertList.get(position);
 
         holder.alertTitle.setText(alert.getTitle() != null ? alert.getTitle() : "SOS ALERT");
-        holder.username.setText(alert.getDescription() != null ? alert.getDescription() : "No details");
-        holder.location.setText(alert.getLocationText());
-        holder.date.setText(alert.getDate() + " " + alert.getTime());
+        holder.username.setText(alert.getDescription() != null ? alert.getDescription() : "Username needs help");
+        holder.date.setText(alert.getDate() + " " + alert.getTimestamp());
+
+        // ---------- Clickable Location ----------
+        holder.location.setText("View Location");
+        holder.location.setOnClickListener(v -> {
+            String uri = "geo:" + alert.getLatitude() + "," + alert.getLongitude()
+                    + "?q=" + alert.getLatitude() + "," + alert.getLongitude() + "(SOS Location)";
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+            intent.setPackage("com.google.android.apps.maps");
+            v.getContext().startActivity(intent);
+        });
 
         holder.helpButton.setOnClickListener(v -> listener.onHelp(alert));
         holder.ackButton.setOnClickListener(v -> listener.onAcknowledge(alert));
-
-        // Only notify listener, do NOT switch tabs
-        holder.location.setOnClickListener(v -> {
-            listener.onLocationClick(alert);
-            Toast.makeText(holder.itemView.getContext(),
-                    "Location updated. Switch to Map tab to view.", Toast.LENGTH_SHORT).show();
-        });
     }
+
 
     @Override
     public int getItemCount() {

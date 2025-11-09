@@ -1,13 +1,11 @@
 package com.example.resqnet_app.service;
 
 import android.Manifest;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.pm.ServiceInfo;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.media.MediaPlayer;
@@ -19,6 +17,7 @@ import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -26,8 +25,10 @@ import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.resqnet_app.R;
+import com.example.resqnet_app.data.local.database.AppDatabase;
 import com.example.resqnet_app.data.local.entity.SosAlert;
 import com.example.resqnet_app.utils.Event;
+import com.example.resqnet_app.utils.NetworkUtils;
 import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.connection.AdvertisingOptions;
 import com.google.android.gms.nearby.connection.ConnectionInfo;
@@ -42,44 +43,23 @@ import com.google.android.gms.nearby.connection.Payload;
 import com.google.android.gms.nearby.connection.PayloadCallback;
 import com.google.android.gms.nearby.connection.PayloadTransferUpdate;
 import com.google.android.gms.nearby.connection.Strategy;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class NearbyService extends Service {
+
     private static final String TAG = "NearbyService";
     private static final String CHANNEL_ID = "NearbyServiceChannel";
     private static final String SERVICE_ID = "com.example.resqnet_app.NEARBY_SERVICE";
     private static final Strategy STRATEGY = Strategy.P2P_CLUSTER;
-
-    // Camera & Flash
-    private CameraManager cameraManager;
-    private String cameraId;
-    private boolean isFlashOn = false;
-
-    // Flash blinking
-    private final Handler flashHandler = new Handler(Looper.getMainLooper());
-    private boolean flashOn = false;
-    private final long[] flashPattern = {0, 300, 200, 300}; // blink pattern
-    private int flashIndex = 0;
-    private final Runnable flashRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (cameraManager != null && cameraId != null) {
-                try {
-                    flashOn = !flashOn;
-                    cameraManager.setTorchMode(cameraId, flashOn);
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to toggle flashlight", e);
-                }
-            }
-            flashIndex = (flashIndex + 1) % flashPattern.length;
-            flashHandler.postDelayed(this, flashPattern[flashIndex]);
-        }
-    };
 
     private final IBinder binder = new NearbyBinder();
     private ConnectionsClient connectionsClient;
@@ -93,10 +73,22 @@ public class NearbyService extends Service {
     private boolean isAdvertising = false;
     private boolean isDiscovering = false;
 
+    // Camera & Flash
+    private CameraManager cameraManager;
+    private String cameraId;
+    private boolean isFlashOn = false;
+
+    // SOS
     private MediaPlayer sosPlayer;
     private Vibrator vibrator;
 
-    // ---------------- Retry Nearby ----------------
+    // Room DB
+    private AppDatabase appDatabase;
+
+    // Firestore
+    private FirebaseFirestore firestore;
+
+    // Retry Nearby
     private final Handler nearbyRetryHandler = new Handler(Looper.getMainLooper());
     private final Runnable nearbyRetryRunnable = new Runnable() {
         @Override
@@ -105,7 +97,7 @@ public class NearbyService extends Service {
                 Log.d(TAG, "Retrying Nearby discovery...");
                 startAdvertising();
                 startDiscovery();
-                nearbyRetryHandler.postDelayed(this, 5000); // retry every 5 seconds
+                nearbyRetryHandler.postDelayed(this, 5000);
             } else {
                 nearbyRetryHandler.removeCallbacks(this);
             }
@@ -117,22 +109,15 @@ public class NearbyService extends Service {
         nearbyRetryHandler.postDelayed(nearbyRetryRunnable, 5000);
     }
 
-    // ---------------- SOS Auto-stop ----------------
+    // SOS auto-stop
     private final Handler sosStopHandler = new Handler(Looper.getMainLooper());
-    private final Runnable sosStopRunnable = new Runnable() {
-        @Override
-        public void run() {
-            Log.d(TAG, "Auto-stopping SOS buzzer after 1 minute");
-            stopSOSAlert();
-        }
-    };
+    private final Runnable sosStopRunnable = this::stopSOSAlert;
 
     private void scheduleSOSAutoStop() {
         sosStopHandler.removeCallbacks(sosStopRunnable);
         sosStopHandler.postDelayed(sosStopRunnable, 60000); // 1 min
     }
 
-    // ---------------- Messaging ----------------
     public void sendMessage(String text) {
         if (text == null || text.isEmpty()) return;
 
@@ -143,6 +128,7 @@ public class NearbyService extends Service {
 
         Payload payload = Payload.fromBytes(text.getBytes(StandardCharsets.UTF_8));
 
+        // Send the payload to all connected endpoints
         for (String endpointId : new ArrayList<>(connectedEndpoints.keySet())) {
             try {
                 connectionsClient.sendPayload(endpointId, payload)
@@ -154,6 +140,7 @@ public class NearbyService extends Service {
         }
     }
 
+
     public class NearbyBinder extends Binder {
         public NearbyService getService() {
             return NearbyService.this;
@@ -164,10 +151,12 @@ public class NearbyService extends Service {
     public void onCreate() {
         super.onCreate();
         connectionsClient = Nearby.getConnectionsClient(this);
+        appDatabase = AppDatabase.getInstance(this);
+        firestore = FirebaseFirestore.getInstance();
+
         createNotificationChannel();
         startForegroundSafe();
 
-        // Camera/Flash
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             for (String id : cameraManager.getCameraIdList()) {
@@ -182,7 +171,7 @@ public class NearbyService extends Service {
         }
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        Log.d(TAG, "NearbyService created");
+
         restartNearbyIfNeeded();
     }
 
@@ -191,10 +180,9 @@ public class NearbyService extends Service {
         return binder;
     }
 
-    // ---------------- Start/Stop Nearby ----------------
+    // ---------------- Nearby Start/Stop ----------------
     public void startNearby(String username) {
         this.localUserName = username != null ? username : "User";
-        Log.d(TAG, "Nearby started for user: " + this.localUserName);
         startAdvertising();
         startDiscovery();
     }
@@ -214,67 +202,10 @@ public class NearbyService extends Service {
         nearbyRetryHandler.removeCallbacks(nearbyRetryRunnable);
     }
 
-    // ---------------- Foreground/Notification ----------------
-    private void startForegroundSafe() {
-        NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("ResQNet Nearby Service")
-                .setContentText("Running background connection service...")
-                .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true);
-
-        Notification notification = b.build();
-
-        if (Build.VERSION.SDK_INT >= 34) {
-            try {
-                startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE);
-            } catch (SecurityException se) {
-                Log.w(TAG, "startForeground fallback", se);
-                startForeground(1, notification);
-            }
-        } else {
-            startForeground(1, notification);
-        }
-    }
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, "Nearby Service", NotificationManager.IMPORTANCE_LOW
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) manager.createNotificationChannel(channel);
-        }
-    }
-
-    private void turnFlashlightOn() {
-        if (cameraManager != null && cameraId != null && !isFlashOn) {
-            try {
-                cameraManager.setTorchMode(cameraId, true);
-                isFlashOn = true;
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to turn on flashlight", e);
-            }
-        }
-    }
-
-    private void turnFlashlightOff() {
-        if (cameraManager != null && cameraId != null && isFlashOn) {
-            try {
-                cameraManager.setTorchMode(cameraId, false);
-                isFlashOn = false;
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to turn off flashlight", e);
-            }
-        }
-    }
-
-    // ---------------- Advertising / Discovery ----------------
     private void startAdvertising() {
         if (isAdvertising) return;
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE)
-                != PackageManager.PERMISSION_GRANTED) return;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED)
+            return;
 
         isAdvertising = true;
         connectionsClient.startAdvertising(
@@ -292,9 +223,8 @@ public class NearbyService extends Service {
 
     private void startDiscovery() {
         if (isDiscovering) return;
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
-                != PackageManager.PERMISSION_GRANTED) return;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)
+            return;
 
         isDiscovering = true;
         connectionsClient.startDiscovery(
@@ -309,17 +239,16 @@ public class NearbyService extends Service {
                 });
     }
 
+    // ---------------- Connection Callbacks ----------------
     private final EndpointDiscoveryCallback endpointDiscoveryCallback = new EndpointDiscoveryCallback() {
         @Override
         public void onEndpointFound(@NonNull String endpointId, @NonNull DiscoveredEndpointInfo info) {
-            Log.d(TAG, "Endpoint found: " + info.getEndpointName() + " id=" + endpointId);
             connectionsClient.requestConnection(localUserName, endpointId, connectionLifecycleCallback);
-            nearbyRetryHandler.removeCallbacks(nearbyRetryRunnable); // stop retry
+            nearbyRetryHandler.removeCallbacks(nearbyRetryRunnable);
         }
 
         @Override
         public void onEndpointLost(@NonNull String endpointId) {
-            Log.d(TAG, "Endpoint lost: " + endpointId);
             connectedEndpoints.remove(endpointId);
             updateConnectedDevices();
             if (connectedEndpoints.isEmpty()) scheduleNearbyRetry();
@@ -329,8 +258,7 @@ public class NearbyService extends Service {
     private final ConnectionLifecycleCallback connectionLifecycleCallback = new ConnectionLifecycleCallback() {
         @Override
         public void onConnectionInitiated(@NonNull String endpointId, @NonNull ConnectionInfo connectionInfo) {
-            String remoteName = connectionInfo.getEndpointName();
-            connectedEndpoints.put(endpointId, remoteName);
+            connectedEndpoints.put(endpointId, connectionInfo.getEndpointName());
             updateConnectedDevices();
             connectionsClient.acceptConnection(endpointId, payloadCallback);
         }
@@ -341,7 +269,6 @@ public class NearbyService extends Service {
             if (code != ConnectionsStatusCodes.STATUS_OK) {
                 connectedEndpoints.remove(endpointId);
                 updateConnectedDevices();
-                Log.e(TAG, "Connection failed with code " + code);
                 scheduleNearbyRetry();
             }
         }
@@ -351,7 +278,6 @@ public class NearbyService extends Service {
             connectedEndpoints.remove(endpointId);
             updateConnectedDevices();
             if (connectedEndpoints.isEmpty()) scheduleNearbyRetry();
-            Log.d(TAG, "Disconnected from " + endpointId);
         }
     };
 
@@ -360,23 +286,25 @@ public class NearbyService extends Service {
         public void onPayloadReceived(@NonNull String endpointId, @NonNull Payload payload) {
             if (payload.asBytes() != null) {
                 String message = new String(payload.asBytes(), StandardCharsets.UTF_8);
-                Log.d(TAG, "Message received: " + message);
+                try {
+                    com.google.gson.JsonObject json = com.google.gson.JsonParser.parseString(message).getAsJsonObject();
+                    if (json.has("uuid")) { // SOS message check
+                        SosAlert alert = new SosAlert();
+                        alert.setTitle(json.get("title").getAsString());
+                        alert.setDescription(json.get("description").getAsString());
+                        alert.setLatitude(json.get("latitude").getAsDouble());
+                        alert.setLongitude(json.get("longitude").getAsDouble());
+                        alert.setDate(json.get("date").getAsString());
+                        alert.setTimestamp(json.get("time").getAsString());
+                        alert.setUuid(json.get("uuid").getAsString());
+                        alert.setStatus("active");
 
-                if (message.startsWith("SOS|")) {
-                    String[] parts = message.split("\\|");
-                    SosAlert alert = new SosAlert();
-                    alert.setTitle("SOS ALERT");
-                    if (parts.length >= 2) alert.setDescription(parts[1]);
-                    if (parts.length >= 3) {
-                        String[] latLon = parts[2].split(",");
-                        try {
-                            alert.setLatitude(Double.parseDouble(latLon[0]));
-                            alert.setLongitude(Double.parseDouble(latLon[1]));
-                        } catch (Exception ignored) {}
+                        postSosAlert(alert); // notify UI
+                    } else {
+                        receivedMessage.postValue(message);
                     }
-                    alert.setStatus("active");
-                    postSosAlert(alert);
-                } else {
+                } catch (Exception e) {
+                    Log.d(TAG, "Received non-SOS message: " + message);
                     receivedMessage.postValue(message);
                 }
             }
@@ -386,33 +314,73 @@ public class NearbyService extends Service {
         public void onPayloadTransferUpdate(@NonNull String endpointId, @NonNull PayloadTransferUpdate update) {}
     };
 
-    // ---------------- Public SOS Methods ----------------
-    public void sendSOS(String message, double latitude, double longitude) {
-        String sosMessage = "SOS|" + message + "|" + latitude + "," + longitude;
-        sendSOSMessage(sosMessage);
-    }
 
-    public void sendSOSMessage(String message) {
-        if (connectedEndpoints.isEmpty()) {
-            Log.w(TAG, "No connected devices to send SOS");
-            return;
+    // ---------------- SOS Methods ----------------
+    public void sendSOS(String username, double latitude, double longitude) {
+        SosAlert alert = new SosAlert();
+        alert.setUuid(UUID.randomUUID().toString());
+
+        // Date & Time
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            alert.setDate(LocalDate.now().toString());
+            alert.setTimestamp(LocalTime.now().toString());
+        } else {
+            alert.setDate(new java.util.Date().toString());
+            alert.setTimestamp(String.valueOf(System.currentTimeMillis()));
         }
-        Payload payload = Payload.fromBytes(message.getBytes(StandardCharsets.UTF_8));
-        for (String endpointId : new ArrayList<>(connectedEndpoints.keySet())) {
-            try {
-                connectionsClient.sendPayload(endpointId, payload)
-                        .addOnSuccessListener(unused -> Log.d(TAG, "SOS sent to " + endpointId))
-                        .addOnFailureListener(e -> Log.e(TAG, "Failed to send SOS to " + endpointId, e));
-            } catch (Exception e) {
-                Log.w(TAG, "sendSOS payload exception", e);
+
+        alert.setTitle("SOS ALERT");
+        alert.setDescription(username + " needs help");
+        alert.setLatitude(latitude);
+        alert.setLongitude(longitude);
+        alert.setStatus("active");
+        alert.setSynced(false);
+
+        // Save to Room DB & Firestore
+        new Thread(() -> {
+            appDatabase.sosAlertDao().insert(alert);
+
+            if (NetworkUtils.isOnline(getApplicationContext())) {
+                firestore.collection("sos_alerts")
+                        .document(alert.getUuid())
+                        .set(alert)
+                        .addOnSuccessListener(unused -> {
+                            alert.setSynced(true);
+                            appDatabase.sosAlertDao().update(alert);
+                        });
+            } else {
+                sendSOSNearby(alert); // send to nearby devices if offline
             }
+        }).start();
+
+        triggerSOSAlert(username + " needs help");
+    }
+
+    private void sendSOSNearby(SosAlert alert) {
+        try {
+            Map<String, Object> sosData = new HashMap<>();
+            sosData.put("title", alert.getTitle());
+            sosData.put("description", alert.getDescription());
+            sosData.put("latitude", alert.getLatitude());
+            sosData.put("longitude", alert.getLongitude());
+            sosData.put("date", alert.getDate());
+            sosData.put("time", alert.getTimestamp());
+            sosData.put("uuid", alert.getUuid());
+
+            String json = new com.google.gson.Gson().toJson(sosData);
+            Payload payload = Payload.fromBytes(json.getBytes(StandardCharsets.UTF_8));
+
+            for (String endpointId : new ArrayList<>(connectedEndpoints.keySet())) {
+                connectionsClient.sendPayload(endpointId, payload);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "sendSOSNearby error", e);
         }
     }
 
-    // ---------------- SOS Alert Helpers ----------------
+
     private void postSosAlert(SosAlert alert) {
         newSosAlert.postValue(new Event<>(alert));
-        runOnUiThread(() -> triggerSOSAlert(alert.getDescription()));
     }
 
     private void triggerSOSAlert(String message) {
@@ -425,71 +393,75 @@ public class NearbyService extends Service {
         try {
             if (sosPlayer == null) {
                 sosPlayer = MediaPlayer.create(this, R.raw.buzzer_sound);
-                if (sosPlayer != null) sosPlayer.setLooping(true);
+                sosPlayer.setLooping(true);
             }
-            if (sosPlayer != null && !sosPlayer.isPlaying()) sosPlayer.start();
+            if (!sosPlayer.isPlaying()) sosPlayer.start();
         } catch (Exception e) {
-            Log.w(TAG, "Failed to start sosPlayer", e);
+            Log.w(TAG, "SOS media error", e);
         }
 
-        // Start blinking flashlight
-        flashIndex = 0;
-        flashHandler.removeCallbacks(flashRunnable);
-        flashHandler.post(flashRunnable);
-
-        try {
-            NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setContentTitle("🚨 SOS Alert Received!")
-                    .setContentText(message)
-                    .setSmallIcon(android.R.drawable.stat_notify_error)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setAutoCancel(true);
-            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (manager != null) manager.notify(2, b.build());
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to show SOS notification", e);
-        }
-
-        scheduleSOSAutoStop(); // schedule auto-stop after 1 min
-        Log.d(TAG, "SOS ALERT triggered: " + message);
+        scheduleSOSAutoStop();
     }
 
     public void stopSOSAlert() {
         try {
-            if (sosPlayer != null) {
-                if (sosPlayer.isPlaying()) sosPlayer.stop();
+            if (sosPlayer != null && sosPlayer.isPlaying()) {
+                sosPlayer.stop();
                 sosPlayer.release();
                 sosPlayer = null;
             }
-        } catch (Exception e) {
-            Log.w(TAG, "stopSOSAlert media error", e);
-        }
-
+        } catch (Exception e) { Log.w(TAG, "SOS stop error", e); }
         if (vibrator != null) vibrator.cancel();
-
-        // Stop blinking flashlight
-        flashHandler.removeCallbacks(flashRunnable);
-        turnFlashlightOff();
-
         sosStopHandler.removeCallbacks(sosStopRunnable);
+        turnFlashlightOff();
     }
 
     // ---------------- Helpers ----------------
+    private void updateConnectedDevices() {
+        connectedDevices.postValue(new ArrayList<>(connectedEndpoints.values()));
+    }
+
     private void restartNearbyIfNeeded() {
         if (!isAdvertising && !isDiscovering) {
-            Log.d(TAG, "Restarting Nearby automatically...");
             startAdvertising();
             startDiscovery();
         }
     }
 
-    private void updateConnectedDevices() {
-        List<String> names = new ArrayList<>(connectedEndpoints.values());
-        connectedDevices.postValue(names);
+    private void startForegroundSafe() {
+        NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("ResQNet Nearby Service")
+                .setContentText("Running background connection service...")
+                .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(1, b.build());
+        } else startForeground(1, b.build());
     }
 
-    private void runOnUiThread(Runnable runnable) {
-        new Handler(Looper.getMainLooper()).post(runnable);
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, "Nearby Service", NotificationManager.IMPORTANCE_LOW
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+    }
+
+    private void turnFlashlightOff() {
+        try {
+            if (cameraManager != null && cameraId != null && isFlashOn) {
+                cameraManager.setTorchMode(cameraId, false);
+                isFlashOn = false;
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void runOnUiThread(Runnable r) {
+        new Handler(Looper.getMainLooper()).post(r);
     }
 
     @Override
@@ -499,6 +471,5 @@ public class NearbyService extends Service {
         stopSOSAlert();
         nearbyRetryHandler.removeCallbacks(nearbyRetryRunnable);
         sosStopHandler.removeCallbacks(sosStopRunnable);
-        Log.d(TAG, "NearbyService destroyed");
     }
 }

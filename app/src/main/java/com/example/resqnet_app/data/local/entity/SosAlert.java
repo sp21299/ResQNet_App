@@ -11,7 +11,12 @@ public class SosAlert {
     public String title;
     public String description;
     public String date;
-    public String time;
+    public String timestamp;
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public String status; // active, acknowledged, etc.
 
     public double latitude;
@@ -51,8 +56,6 @@ public class SosAlert {
     public String getDate() { return date; }
     public void setDate(String date) { this.date = date; }
 
-    public String getTime() { return time; }
-    public void setTime(String time) { this.time = time; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
@@ -67,5 +70,9 @@ public class SosAlert {
     public String getLocationText() {
         if (latitude != 0 && longitude != 0) return "View Location";
         return "Location not available";
+    }
+
+    public String getTimestamp() {
+        return timestamp;
     }
 }

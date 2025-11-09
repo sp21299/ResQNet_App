@@ -29,6 +29,9 @@ import com.example.resqnet_app.data.local.entity.SosAlert;
 import com.example.resqnet_app.service.NearbyService;
 import com.example.resqnet_app.utils.Event;
 import com.example.resqnet_app.utils.UserSessionManager;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +47,9 @@ public class HomeFragment extends Fragment {
     private SosAlertAdapter activeAdapter, resolvedAdapter;
 
     private ActivityResultLauncher<String[]> permissionLauncher;
+
+    // Inside your HomeFragment class
+    private FusedLocationProviderClient fusedLocationClient;
 
     // ---------------- Service Connection ----------------
     private final ServiceConnection serviceConnection = new ServiceConnection() {
@@ -91,6 +97,8 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        // In onViewCreated()
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
         super.onViewCreated(view, savedInstanceState);
 
         sosButton = view.findViewById(R.id.sosButton);
@@ -138,27 +146,47 @@ public class HomeFragment extends Fragment {
             if (nearbyService != null && isBound) {
                 UserSessionManager session = new UserSessionManager(requireContext());
                 String username = session.getUsername();
-                if (username == null || username.isEmpty()) username = "Unknown User";
+                if (username == null || username.isEmpty()) {
+                    username = "Unknown User";
+                }
 
-                // Get location if you have it (latitude, longitude)
-                double lat = 0, lon = 0; // replace with actual if available
 
-                // Send SOS to nearby devices
-                nearbyService.sendSOS(username, lat, lon);
+                // Check location permission
+                if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(requireContext(), "Location permission required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                // Add SOS locally to Active list
-                SosAlert alert = new SosAlert();
-                alert.setTitle("SOS ALERT");
-                alert.setDescription(username);
-                alert.setStatus("active");
-                alert.setLatitude(lat);
-                alert.setLongitude(lon);
+                // Fetch current location
+                String finalUsername = username;
+                fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                        .addOnSuccessListener(location -> {
+                            double lat = 0, lon = 0;
+                            if (location != null) {
+                                lat = location.getLatitude();
+                                lon = location.getLongitude();
+                            } else {
+                                Toast.makeText(requireContext(), "Unable to get location, sending 0,0", Toast.LENGTH_SHORT).show();
+                            }
 
-                activeAlerts.add(alert);
-                activeAdapter.notifyItemInserted(activeAlerts.size() - 1);
+                            // Send SOS to nearby devices
+                            nearbyService.sendSOS(finalUsername, lat, lon);
 
-                Toast.makeText(requireContext(), "🚨 SOS sent to nearby devices!", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "SOS sent by " + username);
+                            // Add SOS locally to Active list
+                            SosAlert alert = new SosAlert();
+                            alert.setTitle("SOS ALERT");
+                            alert.setDescription(finalUsername + " needs help");
+                            alert.setStatus("active");
+                            alert.setLatitude(lat);
+                            alert.setLongitude(lon);
+
+                            activeAlerts.add(alert);
+                            activeAdapter.notifyItemInserted(activeAlerts.size() - 1);
+
+                            Toast.makeText(requireContext(), "🚨 SOS sent to nearby devices!", Toast.LENGTH_SHORT).show();
+                            Log.d(TAG, "SOS sent by " + finalUsername + " at " + lat + ", " + lon);
+                        });
             } else {
                 Toast.makeText(requireContext(), "NearbyService not ready yet.", Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "SOS button clicked but service not bound");

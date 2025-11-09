@@ -32,6 +32,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 
     <!-- 🔔 Vibrate -->
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -53,6 +57,9 @@
     <!-- Optional feature -->
     <uses-feature
         android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
         android:required="false" />
 
     <!-- Add this permission so startForeground(...) with connectedDevice type is allowed on Android 14+ -->
