@@ -1,6 +1,7 @@
 package com.example.resqnet_app;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,15 +16,17 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.resqnet_app.data.local.dao.UserDao;
 import com.example.resqnet_app.data.local.database.AppDatabase;
 import com.example.resqnet_app.data.local.entity.User;
+import com.example.resqnet_app.utils.UserSessionManager;
 
 public class profile_activity extends AppCompatActivity {
 
-    EditText profile_name, email_tv, birth_tv, mobile_tv, address;
-
-    Button edit_button;
+    private EditText profile_name, email_tv, birth_tv, mobile_tv, address;
+    private Button edit_button;
     private AppDatabase db;
     private UserDao userDao;
     private User currentUser;
+    private UserSessionManager sessionManager;
+
     @SuppressLint("WrongViewCast")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,10 +34,10 @@ public class profile_activity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_profile);
 
-        // Initialize TextViews
+        // Initialize views
         profile_name = findViewById(R.id.user_name);
         email_tv = findViewById(R.id.user_email);
-        birth_tv = findViewById(R.id.user_birth); // Make sure you add this TextView in XML
+        birth_tv = findViewById(R.id.user_birth);
         mobile_tv = findViewById(R.id.user_phone);
         address = findViewById(R.id.user_address);
         edit_button = findViewById(R.id.editbutton);
@@ -46,44 +49,61 @@ public class profile_activity extends AppCompatActivity {
         db = AppDatabase.getInstance(this);
         userDao = db.userDao();
 
-        // Load user from DB (for example, user with id=1)
+        // Initialize Session Manager
+        sessionManager = new UserSessionManager(this);
+        String loggedInUsername = sessionManager.getUsername();
+
+        Button logoutButton = findViewById(R.id.logout_button);
+
+        logoutButton.setOnClickListener(v -> {
+            // Clear session
+            sessionManager.clearSession();
+
+            // Go back to login screen
+            Intent intent = new Intent(profile_activity.this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
+        // Fetch logged-in user from Room
         new Thread(() -> {
-            currentUser = userDao.getUserById(1); // replace 1 with actual logged-in user ID
+            currentUser = userDao.getUserByUsername(loggedInUsername);
             if (currentUser != null) {
                 runOnUiThread(() -> showUserData(currentUser));
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "User not found!", Toast.LENGTH_SHORT).show());
             }
         }).start();
 
-        // Handle edit/save button
+        // Edit / Save button logic
         edit_button.setOnClickListener(v -> {
+            if (currentUser == null) {
+                Toast.makeText(this, "User data not loaded yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (edit_button.getText().equals("Edit Profile")) {
                 // Enable editing
                 setFieldsEditable(true);
                 edit_button.setText("Save");
-
-                Toast.makeText(this, "gjggjgjgjgj", Toast.LENGTH_SHORT).show();
-
-                //Log.e("Clicked..",currentUser.toString());
-                if (currentUser == null) {
-                    currentUser.setName(profile_name.getText().toString());
-                    currentUser.setEmail(email_tv.getText().toString());
-                    currentUser.setBirth(birth_tv.getText().toString());
-                    currentUser.setMobile(mobile_tv.getText().toString());
-                    currentUser.setAddress(address.getText().toString());
-
-                    // Update in Room DB
-                    new Thread(() -> userDao.updateUser(currentUser)).start();
-
-                    Toast.makeText(this, "Profile Updated", Toast.LENGTH_SHORT).show();
-
-                    // Disable editing again
-                    setFieldsEditable(false);
-                    edit_button.setText("Edit Profile");
-                }
             } else {
                 // Save updates
+                currentUser.setName(profile_name.getText().toString());
+                currentUser.setEmail(email_tv.getText().toString());
+                currentUser.setBirth(birth_tv.getText().toString());
+                currentUser.setMobile(mobile_tv.getText().toString());
+                currentUser.setAddress(address.getText().toString());
 
-
+                new Thread(() -> {
+                    userDao.updateUser(currentUser);
+                    runOnUiThread(() -> {
+                        Toast.makeText(profile_activity.this, "Profile Updated", Toast.LENGTH_SHORT).show();
+                        setFieldsEditable(false);
+                        edit_button.setText("Edit Profile");
+                    });
+                }).start();
             }
         });
 
@@ -93,10 +113,6 @@ public class profile_activity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-
-        // Load user data
-//        showUserData(currentUser);
     }
 
     // Enable or disable EditText fields
@@ -108,6 +124,7 @@ public class profile_activity extends AppCompatActivity {
         address.setEnabled(editable);
     }
 
+    // Populate profile screen with user data
     private void showUserData(User user) {
         profile_name.setText(user.getName());
         email_tv.setText(user.getEmail());
@@ -115,6 +132,4 @@ public class profile_activity extends AppCompatActivity {
         mobile_tv.setText(user.getMobile());
         address.setText(user.getAddress());
     }
-
-
 }

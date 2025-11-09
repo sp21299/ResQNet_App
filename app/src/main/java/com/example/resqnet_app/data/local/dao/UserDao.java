@@ -31,14 +31,13 @@ public interface UserDao {
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     User getUserByEmail(String email);
 
+    @Query("SELECT * FROM users WHERE name = :username LIMIT 1")
+    User getUserByUsername(String username); // ✅ new method
+
     @Query("SELECT * FROM users WHERE isSynced = 0")
     List<User> getUnsyncedUsers();
 
-    // ✅ Corrected: use the correct column name
     @Query("SELECT name FROM users WHERE id = :uid LIMIT 1")
-    String getUsernameByUid(String uid);
+    String getUsernameByUid(int uid); // ✅ fixed
 
-
-    @Update
-    void update(User user);
 }

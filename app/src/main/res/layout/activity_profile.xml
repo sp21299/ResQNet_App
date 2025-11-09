@@ -153,6 +153,18 @@
                 android:drawablePadding="8dp"
                 android:elevation="6dp" />
 
+            <!-- Logout Button -->
+            <Button
+                android:id="@+id/logout_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="#E53935"
+                android:text="Logout"
+                android:textColor="@android:color/white"
+                android:paddingVertical="12dp"
+                android:drawablePadding="8dp"
+                android:elevation="6dp" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

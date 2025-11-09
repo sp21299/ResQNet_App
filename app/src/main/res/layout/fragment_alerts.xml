@@ -7,8 +7,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    tools:context=".ui.alerts.AlertsFragment">
-
+    tools:context=".ui.alerts.AlertsFragment"
+    tools:ignore="MissingClass">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/alertsRecyclerView"

@@ -141,22 +141,29 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onLocationClick(SosAlert sosAlert) {
-                if (sosAlert != null) {
-                    double lat = sosAlert.getLatitude();
-                    double lon = sosAlert.getLongitude();
-
-                    // ✅ Send SOS alert coordinates to MapFragment through ViewModel
-                    sharedViewModel.updateSosLocation(lat, lon);
-
-                    // Show confirmation
-                    Toast.makeText(requireContext(),
-                            "📍 Location updated. Open Map tab to view.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(requireContext(),
-                            "Unable to update location.", Toast.LENGTH_SHORT).show();
+                if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(requireContext(), "Location permission required", Toast.LENGTH_SHORT).show();
+                    return;
                 }
-            }
 
+                fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                        .addOnSuccessListener(location -> {
+                            if (location != null) {
+                                double lat = location.getLatitude();
+                                double lon = location.getLongitude();
+
+                                // ✅ Send coordinates to MapFragment through ViewModel
+                                sharedViewModel.updateSosLocation(lat, lon);
+
+                                Toast.makeText(requireContext(),
+                                        "📍 Location updated. Open Map tab to view.", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(requireContext(),
+                                        "Unable to fetch location right now.", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
 
 
         };

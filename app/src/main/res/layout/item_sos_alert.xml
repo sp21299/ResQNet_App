@@ -2,8 +2,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    android:elevation="4dp"
-    android:padding="12dp">
+    android:elevation="6dp"
+    android:padding="15dp"
+    android:backgroundTint="@android:color/white"
+    android:radius="12dp">
 
     <LinearLayout
         android:orientation="vertical"
@@ -15,10 +17,11 @@
             android:id="@+id/sos_alert"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:text="SOS ALERT"
             android:textStyle="bold"
             android:textColor="@android:color/holo_red_dark"
-            android:textSize="18sp" />
+            android:textSize="20sp" />
 
         <!-- Description / Username -->
         <TextView
@@ -26,8 +29,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Username needs help"
-            android:layout_marginTop="4dp"
-            android:textSize="16sp" />
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="6dp"
+            android:textSize="16sp"
+            android:textColor="@android:color/black" />
 
         <!-- Clickable Location -->
         <TextView
@@ -35,11 +40,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="View Location"
-            android:textColor="@android:color/holo_blue_dark"
+            android:layout_marginStart="4dp"
+            android:textColor="#0A89B4"
             android:textSize="14sp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:clickable="true"
-            android:focusable="true"/>
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium" />
 
         <!-- Date / Time + Buttons -->
         <LinearLayout
@@ -47,27 +54,47 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="12dp">
 
             <TextView
                 android:id="@+id/sos_date"
                 android:layout_width="0dp"
                 android:layout_weight="1"
+                android:layout_marginStart="4dp"
                 android:layout_height="wrap_content"
-                android:text="Date And Time" />
+                android:text="Date And Time"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="14sp" />
 
             <Button
                 android:id="@+id/button_help"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="HELP" />
+                android:text="HELP"
+                android:layout_marginBottom="2dp"
+                android:background="@drawable/btn_help"
+                android:textColor="@android:color/white"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:fontFamily="sans-serif-medium"
+                android:stateListAnimator="@null"/>
 
             <Button
                 android:id="@+id/button_ack"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ACKNOWLEDGE"
-                android:layout_marginStart="8dp" />
+                android:layout_marginBottom="2dp"
+                android:background="@drawable/btn_ack"
+                android:textColor="@android:color/white"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:layout_marginStart="4dp"
+                android:fontFamily="sans-serif-medium"
+                android:stateListAnimator="@null"/>
+
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

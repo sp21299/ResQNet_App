@@ -67,7 +67,7 @@ public class SyncService extends Service {
                                 firestore.collection("Users").document(uid)
                                         .set(user)
                                         .addOnSuccessListener(aVoid -> {
-                                            new Thread(() -> userDao.update(user)).start();
+                                            new Thread(() -> userDao.updateUser(user)).start();
                                             Log.d("SyncService", "✅ Synced to Firestore: " + user.getEmail());
                                         })
                                         .addOnFailureListener(e ->
@@ -77,7 +77,7 @@ public class SyncService extends Service {
                                 if (e instanceof FirebaseAuthUserCollisionException) {
                                     Log.w("SyncService", "⚠️ User already exists: " + user.getEmail());
                                     user.setSynced(true);
-                                    new Thread(() -> userDao.update(user)).start();
+                                    new Thread(() -> userDao.updateUser(user)).start();
                                 } else {
                                     Log.e("SyncService", "❌ Firebase Auth failed: " + user.getEmail(), e);
                                 }
