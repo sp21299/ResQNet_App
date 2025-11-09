@@ -52,12 +52,13 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
         // ---------- Clickable Location ----------
         holder.location.setText("View Location");
         holder.location.setOnClickListener(v -> {
-            String uri = "geo:" + alert.getLatitude() + "," + alert.getLongitude()
-                    + "?q=" + alert.getLatitude() + "," + alert.getLongitude() + "(SOS Location)";
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
-            intent.setPackage("com.google.android.apps.maps");
-            v.getContext().startActivity(intent);
+            // Notify listener to update map location instead of redirecting to Google Maps
+            listener.onLocationClick(alert);
+
+            // Show confirmation message
+            Toast.makeText(v.getContext(), "Location updated, open Map tab", Toast.LENGTH_SHORT).show();
         });
+
 
         holder.helpButton.setOnClickListener(v -> listener.onHelp(alert));
         holder.ackButton.setOnClickListener(v -> listener.onAcknowledge(alert));

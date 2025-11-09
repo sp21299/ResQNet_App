@@ -29,12 +29,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
+        // Initialize the map fragment
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.mapFragment);
-        if (mapFragment != null) mapFragment.getMapAsync(this);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
 
+        // Observe updated SOS location from SharedViewModel
         sharedViewModel.sosLocation.observe(getViewLifecycleOwner(), latLng -> {
-            if (latLng != null && mMap != null) {
+            if (latLng != null && mMap != null) { // use mMap here
                 mMap.clear();
                 mMap.addMarker(new MarkerOptions().position(latLng).title("SOS Location"));
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f));
@@ -49,6 +53,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
+        // Show last known SOS location if available
         LatLng current = sharedViewModel.sosLocation.getValue();
         if (current != null) {
             mMap.addMarker(new MarkerOptions().position(current).title("SOS Location"));

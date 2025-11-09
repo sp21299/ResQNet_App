@@ -21,14 +21,16 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.resqnet_app.R;
+import com.example.resqnet_app.data.local.database.AppDatabase;
 import com.example.resqnet_app.data.local.entity.SosAlert;
 import com.example.resqnet_app.service.NearbyService;
-import com.example.resqnet_app.utils.Event;
 import com.example.resqnet_app.utils.UserSessionManager;
+import com.example.resqnet_app.viewmodel.SharedViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
@@ -38,11 +40,15 @@ import java.util.List;
 
 public class HomeFragment extends Fragment {
 
+    private AppDatabase appDatabase;
+
     private static final String TAG = "HomeFragment";
 
     private NearbyService nearbyService;
     private boolean isBound = false;
     private Button sosButton;
+
+    private SharedViewModel sharedViewModel;
 
     private SosAlertAdapter activeAdapter, resolvedAdapter;
 
@@ -100,6 +106,13 @@ public class HomeFragment extends Fragment {
         // In onViewCreated()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
         super.onViewCreated(view, savedInstanceState);
+        appDatabase = AppDatabase.getInstance(requireContext());
+        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+
+
+        // Load previously saved SOS alerts
+        loadSavedAlerts();
 
         sosButton = view.findViewById(R.id.sosButton);
 
@@ -125,11 +138,27 @@ public class HomeFragment extends Fragment {
                 resolvedAdapter.notifyDataSetChanged();
             }
 
+
             @Override
             public void onLocationClick(SosAlert sosAlert) {
-                Toast.makeText(requireContext(),
-                        "Location updated. Switch to Map tab to view.", Toast.LENGTH_SHORT).show();
+                if (sosAlert != null) {
+                    double lat = sosAlert.getLatitude();
+                    double lon = sosAlert.getLongitude();
+
+                    // ✅ Send SOS alert coordinates to MapFragment through ViewModel
+                    sharedViewModel.updateSosLocation(lat, lon);
+
+                    // Show confirmation
+                    Toast.makeText(requireContext(),
+                            "📍 Location updated. Open Map tab to view.", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(),
+                            "Unable to update location.", Toast.LENGTH_SHORT).show();
+                }
             }
+
+
+
         };
 
         activeAdapter = new SosAlertAdapter(activeAlerts, listener);
@@ -192,6 +221,29 @@ public class HomeFragment extends Fragment {
                 Log.d(TAG, "SOS button clicked but service not bound");
             }
         });
+    }
+
+    private void loadSavedAlerts() {
+        new Thread(() -> {
+            List<SosAlert> allAlerts = appDatabase.sosAlertDao().getAllAlerts();
+            requireActivity().runOnUiThread(() -> {
+                activeAlerts.clear();
+                resolvedAlerts.clear();
+
+                for (SosAlert alert : allAlerts) {
+                    if ("active".equalsIgnoreCase(alert.getStatus())) {
+                        activeAlerts.add(alert);
+                    } else {
+                        resolvedAlerts.add(alert);
+                    }
+                }
+
+                activeAdapter.notifyDataSetChanged();
+                resolvedAdapter.notifyDataSetChanged();
+
+                Log.d(TAG, "Loaded " + allAlerts.size() + " alerts from Room DB");
+            });
+        }).start();
     }
 
     @Override
