@@ -371,18 +371,30 @@ public class NearbyService extends Service {
 
             // Firestore sync if online
             if (NetworkUtils.isOnline(getApplicationContext())) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("title", alert.getTitle());
+                data.put("description", alert.getDescription());
+                data.put("latitude", alert.getLatitude());
+                data.put("longitude", alert.getLongitude());
+                data.put("date", alert.getDate());
+                data.put("timestamp", alert.getTimestamp());
+                data.put("uuid", alert.getUuid());
+
                 firestore.collection("sos_alerts")
                         .document(alert.getUuid())
-                        .set(alert)
+                        .set(data, com.google.firebase.firestore.SetOptions.merge())
                         .addOnSuccessListener(unused -> {
                             alert.setSynced(true);
                             new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
+                            Log.d(TAG, "✅ SOS stored in Firestore with limited fields");
                         })
                         .addOnFailureListener(e -> {
                             alert.setSynced(false);
                             new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
+                            Log.e(TAG, "❌ Failed to store SOS in Firestore", e);
                         });
             }
+
         }).start();
     }
 
