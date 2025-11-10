@@ -76,6 +76,10 @@ public class SosAlert {
     public double getLongitude() { return longitude; }
     public void setLongitude(double longitude) { this.longitude = longitude; }
 
+    // Previous values to detect changes
+    public String previousStatus = "";
+    public boolean previousAcknowledged = false;
+
     // For adapter display
     public String getLocationText() {
         if (latitude != 0 && longitude != 0) return "View Location";

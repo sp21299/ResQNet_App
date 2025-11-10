@@ -47,6 +47,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -347,41 +348,43 @@ public class NearbyService extends Service {
         alert.setStatus("active");
         alert.setSynced(false);
 
+        // Format date & time
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             alert.setDate(LocalDate.now().toString());
-            alert.setTimestamp(LocalTime.now().toString());
+
+            // Time formatter hh:mm:ss
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+            alert.setTimestamp(LocalTime.now().format(timeFormatter));
         } else {
             alert.setDate(new java.util.Date().toString());
-            alert.setTimestamp(String.valueOf(System.currentTimeMillis()));
+            // fallback: use simple hh:mm:ss
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss");
+            alert.setTimestamp(sdf.format(new java.util.Date()));
         }
 
         new Thread(() -> {
             // Save to local DB
             appDatabase.sosAlertDao().insert(alert);
 
-            // Send via Nearby always
+            // Send via Nearby
             sendSOSNearby(alert);
 
             // Firestore sync if online
             if (NetworkUtils.isOnline(getApplicationContext())) {
-                Log.d(TAG, "Sending SOS to Firestore: " + alert.getUuid());
                 firestore.collection("sos_alerts")
                         .document(alert.getUuid())
                         .set(alert)
                         .addOnSuccessListener(unused -> {
                             alert.setSynced(true);
                             new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
-                            Log.d(TAG, "SOS synced to Firestore: " + alert.getUuid());
                         })
                         .addOnFailureListener(e -> {
                             alert.setSynced(false);
                             new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
-                            Log.e(TAG, "Failed to sync SOS to Firestore", e);
                         });
             }
         }).start();
     }
-
 
 
     private void sendSOSNearby(SosAlert alert) {

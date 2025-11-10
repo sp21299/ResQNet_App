@@ -115,20 +115,38 @@ public class HomeFragment extends Fragment {
             @Override
             public void onHelp(SosAlert sosAlert) {
                 if (!"helping".equals(sosAlert.getStatus())) {
-                    sosAlert.setStatus("helping"); // update status column
+                    sosAlert.setStatus("helping"); // update status in DB
                     new Thread(() -> appDatabase.sosAlertDao().update(sosAlert)).start();
+
+                    // Move alert from active to resolved
+                    activeAlerts.remove(sosAlert);
+                    resolvedAlerts.add(sosAlert);
+
+                    // Notify adapters
                     activeAdapter.notifyDataSetChanged();
+                    resolvedAdapter.notifyDataSetChanged();
+
                     Toast.makeText(requireContext(), "Helping! ✅", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onAcknowledge(SosAlert sosAlert) {
-                // Keep status as "active" but disable acknowledge button in UI
-                sosAlert.setAcknowledged(true);
-                new Thread(() -> appDatabase.sosAlertDao().update(sosAlert)).start();
-                activeAdapter.notifyDataSetChanged();
-                Toast.makeText(requireContext(), "Acknowledged ✅", Toast.LENGTH_SHORT).show();
+                if (!sosAlert.isAcknowledged()) {
+                    sosAlert.setAcknowledged(true);
+                    sosAlert.setStatus("resolved"); // mark as resolved
+                    new Thread(() -> appDatabase.sosAlertDao().update(sosAlert)).start();
+
+                    // Move alert from active to resolved
+                    activeAlerts.remove(sosAlert);
+                    resolvedAlerts.add(sosAlert);
+
+                    // Notify adapters
+                    activeAdapter.notifyDataSetChanged();
+                    resolvedAdapter.notifyDataSetChanged();
+
+                    Toast.makeText(requireContext(), "Acknowledged ✅", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
@@ -204,7 +222,6 @@ public class HomeFragment extends Fragment {
             }
         });
     }
-
 
     private void loadSavedAlerts() {
         new Thread(() -> {

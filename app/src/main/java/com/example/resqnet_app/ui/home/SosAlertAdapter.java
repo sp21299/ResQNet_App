@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.resqnet_app.R;
 import com.example.resqnet_app.data.local.database.AppDatabase;
 import com.example.resqnet_app.data.local.entity.SosAlert;
-import com.example.resqnet_app.service.NearbyService;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -61,31 +60,30 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
         holder.location.setText(alert.getLocationText());
         holder.location.setOnClickListener(v -> listener.onLocationClick(alert));
 
-        // Enable/disable buttons based on current status
         holder.helpButton.setEnabled(!"helping".equals(alert.getStatus()));
         holder.ackButton.setEnabled(!alert.isAcknowledged());
 
         holder.helpButton.setOnClickListener(v -> {
-            listener.onHelp(alert);                   // Fragment callback
-            alert.setStatus("helping");               // Update local object
-            holder.helpButton.setEnabled(false);      // Update UI
+            listener.onHelp(alert);
+            alert.setStatus("helping");
+            holder.helpButton.setEnabled(false);
 
             // Update Room DB
             new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
 
-            // Sync to Firestore
+            // Sync only changed fields to Firestore
             syncToFirestore(alert, holder.itemView);
         });
 
         holder.ackButton.setOnClickListener(v -> {
-            listener.onAcknowledge(alert);             // Fragment callback
-            alert.setAcknowledged(true);               // Update local object
-            holder.ackButton.setEnabled(false);        // Update UI
+            listener.onAcknowledge(alert);
+            alert.setAcknowledged(true);
+            holder.ackButton.setEnabled(false);
 
             // Update Room DB
             new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
 
-            // Sync to Firestore
+            // Sync only changed fields to Firestore
             syncToFirestore(alert, holder.itemView);
         });
     }
@@ -94,14 +92,26 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
         if (alert.getUuid() == null || alert.getUuid().isEmpty()) return;
 
         Map<String, Object> updates = new HashMap<>();
-        updates.put("status", alert.getStatus());
-        updates.put("isAcknowledged", alert.isAcknowledged());
 
-        firestore.collection("SOS_Alerts") // <- exact case
+        // Update only changed fields
+        if (!"helping".equals(alert.previousStatus) && "helping".equals(alert.getStatus())) {
+            updates.put("status", alert.getStatus());
+        }
+
+        if (!alert.previousAcknowledged && alert.isAcknowledged()) {
+            updates.put("isAcknowledged", true);
+        }
+
+        if (updates.isEmpty()) return; // Nothing to update
+
+        firestore.collection("sos_alerts")
                 .document(alert.getUuid())
-                .set(updates, com.google.firebase.firestore.SetOptions.merge()) // merge creates or updates
+                .set(updates, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(unused -> {
                     alert.setSynced(true);
+                    alert.previousStatus = alert.getStatus();
+                    alert.previousAcknowledged = alert.isAcknowledged();
+
                     new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
                 })
                 .addOnFailureListener(e -> {
