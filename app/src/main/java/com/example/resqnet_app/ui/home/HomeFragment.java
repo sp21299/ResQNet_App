@@ -41,21 +41,17 @@ import java.util.List;
 public class HomeFragment extends Fragment {
 
     private AppDatabase appDatabase;
-
     private static final String TAG = "HomeFragment";
-
     private NearbyService nearbyService;
     private boolean isBound = false;
     private Button sosButton;
-
     private SharedViewModel sharedViewModel;
-
     private SosAlertAdapter activeAdapter, resolvedAdapter;
-
     private ActivityResultLauncher<String[]> permissionLauncher;
-
-    // Inside your HomeFragment class
     private FusedLocationProviderClient fusedLocationClient;
+
+    private final List<SosAlert> activeAlerts = new ArrayList<>();
+    private final List<SosAlert> resolvedAlerts = new ArrayList<>();
 
     // ---------------- Service Connection ----------------
     private final ServiceConnection serviceConnection = new ServiceConnection() {
@@ -70,7 +66,6 @@ public class HomeFragment extends Fragment {
             String username = session.getUsername();
             nearbyService.startNearby(username);
 
-            // Observe incoming SOS alerts from nearby devices
             nearbyService.newSosAlert.observe(getViewLifecycleOwner(), event -> {
                 if (event != null) {
                     SosAlert alert = event.getContentIfNotHandled();
@@ -93,9 +88,6 @@ public class HomeFragment extends Fragment {
         }
     };
 
-    private final List<SosAlert> activeAlerts = new ArrayList<>();
-    private final List<SosAlert> resolvedAlerts = new ArrayList<>();
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_home, container, false);
@@ -103,41 +95,41 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
-        // In onViewCreated()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
         super.onViewCreated(view, savedInstanceState);
         appDatabase = AppDatabase.getInstance(requireContext());
         sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-
-
 
         // Load previously saved SOS alerts
         loadSavedAlerts();
 
         sosButton = view.findViewById(R.id.sosButton);
 
-        // RecyclerViews
         RecyclerView activeRecycler = view.findViewById(R.id.activeSosRecyclerView);
         RecyclerView resolvedRecycler = view.findViewById(R.id.resolvedSosRecyclerView);
-
         activeRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         resolvedRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Adapter listener
+        // ---------------- Adapter listener ----------------
         SosAlertAdapter.OnAlertActionListener listener = new SosAlertAdapter.OnAlertActionListener() {
             @Override
             public void onHelp(SosAlert sosAlert) {
-                // implement help logic if needed
+                if (!"helping".equals(sosAlert.getStatus())) {
+                    sosAlert.setStatus("helping"); // update status column
+                    new Thread(() -> appDatabase.sosAlertDao().update(sosAlert)).start();
+                    activeAdapter.notifyDataSetChanged();
+                    Toast.makeText(requireContext(), "Helping! ✅", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onAcknowledge(SosAlert sosAlert) {
-                activeAlerts.remove(sosAlert);
-                resolvedAlerts.add(sosAlert);
+                // Keep status as "active" but disable acknowledge button in UI
+                sosAlert.setAcknowledged(true);
+                new Thread(() -> appDatabase.sosAlertDao().update(sosAlert)).start();
                 activeAdapter.notifyDataSetChanged();
-                resolvedAdapter.notifyDataSetChanged();
+                Toast.makeText(requireContext(), "Acknowledged ✅", Toast.LENGTH_SHORT).show();
             }
-
 
             @Override
             public void onLocationClick(SosAlert sosAlert) {
@@ -150,51 +142,36 @@ public class HomeFragment extends Fragment {
                 fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                         .addOnSuccessListener(location -> {
                             if (location != null) {
-                                double lat = location.getLatitude();
-                                double lon = location.getLongitude();
-
-                                // ✅ Send coordinates to MapFragment through ViewModel
-                                sharedViewModel.updateSosLocation(lat, lon);
-
-                                Toast.makeText(requireContext(),
-                                        "📍 Location updated. Open Map tab to view.", Toast.LENGTH_SHORT).show();
+                                sharedViewModel.updateSosLocation(location.getLatitude(), location.getLongitude());
+                                Toast.makeText(requireContext(), "📍 Location updated. Open Map tab to view.", Toast.LENGTH_SHORT).show();
                             } else {
-                                Toast.makeText(requireContext(),
-                                        "Unable to fetch location right now.", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(requireContext(), "Unable to fetch location.", Toast.LENGTH_SHORT).show();
                             }
                         });
             }
-
-
         };
+        // --------------------------------------------------------
 
-        activeAdapter = new SosAlertAdapter(activeAlerts, listener);
-        resolvedAdapter = new SosAlertAdapter(resolvedAlerts, listener);
-
+        activeAdapter = new SosAlertAdapter(activeAlerts, listener, appDatabase);
+        resolvedAdapter = new SosAlertAdapter(resolvedAlerts, listener, appDatabase);
         activeRecycler.setAdapter(activeAdapter);
         resolvedRecycler.setAdapter(resolvedAdapter);
 
         setupPermissionLauncher();
         requestNearbyPermissions();
 
-        // SOS button click
         sosButton.setOnClickListener(v -> {
             if (nearbyService != null && isBound) {
                 UserSessionManager session = new UserSessionManager(requireContext());
                 String username = session.getUsername();
-                if (username == null || username.isEmpty()) {
-                    username = "Unknown User";
-                }
+                if (username == null || username.isEmpty()) username = "Unknown User";
 
-
-                // Check location permission
                 if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(requireContext(), "Location permission required", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Fetch current location
                 String finalUsername = username;
                 fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                         .addOnSuccessListener(location -> {
@@ -202,14 +179,10 @@ public class HomeFragment extends Fragment {
                             if (location != null) {
                                 lat = location.getLatitude();
                                 lon = location.getLongitude();
-                            } else {
-                                Toast.makeText(requireContext(), "Unable to get location, sending 0,0", Toast.LENGTH_SHORT).show();
                             }
 
-                            // Send SOS to nearby devices
                             nearbyService.sendSOS(finalUsername, lat, lon);
 
-                            // Add SOS locally to Active list
                             SosAlert alert = new SosAlert();
                             alert.setTitle("SOS ALERT");
                             alert.setDescription(finalUsername + " needs help");
@@ -219,6 +192,8 @@ public class HomeFragment extends Fragment {
 
                             activeAlerts.add(alert);
                             activeAdapter.notifyItemInserted(activeAlerts.size() - 1);
+
+                            new Thread(() -> appDatabase.sosAlertDao().insert(alert)).start();
 
                             Toast.makeText(requireContext(), "🚨 SOS sent to nearby devices!", Toast.LENGTH_SHORT).show();
                             Log.d(TAG, "SOS sent by " + finalUsername + " at " + lat + ", " + lon);
@@ -230,25 +205,22 @@ public class HomeFragment extends Fragment {
         });
     }
 
+
     private void loadSavedAlerts() {
         new Thread(() -> {
             List<SosAlert> allAlerts = appDatabase.sosAlertDao().getAllAlerts();
             requireActivity().runOnUiThread(() -> {
                 activeAlerts.clear();
                 resolvedAlerts.clear();
-
                 for (SosAlert alert : allAlerts) {
-                    if ("active".equalsIgnoreCase(alert.getStatus())) {
+                    if ("active".equalsIgnoreCase(alert.getStatus()) || "helping".equalsIgnoreCase(alert.getStatus())) {
                         activeAlerts.add(alert);
                     } else {
                         resolvedAlerts.add(alert);
                     }
                 }
-
                 activeAdapter.notifyDataSetChanged();
                 resolvedAdapter.notifyDataSetChanged();
-
-                Log.d(TAG, "Loaded " + allAlerts.size() + " alerts from Room DB");
             });
         }).start();
     }
@@ -268,24 +240,18 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // ---------------- Permission Handling ----------------
+    // ---------------- Permissions ----------------
     private void setupPermissionLauncher() {
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
                     boolean allGranted = true;
                     for (Boolean granted : result.values()) {
-                        if (!granted) {
-                            allGranted = false;
-                            break;
-                        }
+                        if (!granted) allGranted = false;
                     }
                     if (!allGranted) {
-                        Toast.makeText(requireContext(),
-                                "Permissions required for Nearby to work.", Toast.LENGTH_LONG).show();
-                    } else {
-                        startAndBindService();
-                    }
+                        Toast.makeText(requireContext(), "Permissions required for Nearby to work.", Toast.LENGTH_LONG).show();
+                    } else startAndBindService();
                 }
         );
     }
@@ -304,20 +270,14 @@ public class HomeFragment extends Fragment {
 
         List<String> toRequest = new ArrayList<>();
         for (String p : permissions) {
-            if (ActivityCompat.checkSelfPermission(requireContext(), p)
-                    != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(requireContext(), p) != PackageManager.PERMISSION_GRANTED)
                 toRequest.add(p);
-            }
         }
 
-        if (!toRequest.isEmpty()) {
-            permissionLauncher.launch(toRequest.toArray(new String[0]));
-        } else {
-            startAndBindService();
-        }
+        if (!toRequest.isEmpty()) permissionLauncher.launch(toRequest.toArray(new String[0]));
+        else startAndBindService();
     }
 
-    // ---------------- Service Binding ----------------
     private void startAndBindService() {
         Intent serviceIntent = new Intent(requireContext(), NearbyService.class);
         requireActivity().startService(serviceIntent);

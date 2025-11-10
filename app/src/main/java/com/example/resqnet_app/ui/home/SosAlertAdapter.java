@@ -1,7 +1,6 @@
 package com.example.resqnet_app.ui.home;
 
-import android.content.Intent;
-import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,14 +12,21 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.resqnet_app.R;
+import com.example.resqnet_app.data.local.database.AppDatabase;
 import com.example.resqnet_app.data.local.entity.SosAlert;
+import com.example.resqnet_app.service.NearbyService;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAlertViewHolder> {
 
     private final List<SosAlert> sosAlertList;
     private final OnAlertActionListener listener;
+    private final AppDatabase appDatabase;
+    private final FirebaseFirestore firestore;
 
     public interface OnAlertActionListener {
         void onHelp(SosAlert sosAlert);
@@ -28,9 +34,12 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
         void onLocationClick(SosAlert sosAlert);
     }
 
-    public SosAlertAdapter(List<SosAlert> sosAlertList, OnAlertActionListener listener) {
+    public SosAlertAdapter(List<SosAlert> sosAlertList, OnAlertActionListener listener,
+                           AppDatabase appDatabase) {
         this.sosAlertList = sosAlertList;
         this.listener = listener;
+        this.appDatabase = appDatabase;
+        this.firestore = FirebaseFirestore.getInstance();
     }
 
     @NonNull
@@ -49,21 +58,59 @@ public class SosAlertAdapter extends RecyclerView.Adapter<SosAlertAdapter.SosAle
         holder.username.setText(alert.getDescription() != null ? alert.getDescription() : "Username needs help");
         holder.date.setText(alert.getDate() + " " + alert.getTimestamp());
 
-        // ---------- Clickable Location ----------
-        holder.location.setText("View Location");
-        holder.location.setOnClickListener(v -> {
-            // Notify listener to update map location instead of redirecting to Google Maps
-            listener.onLocationClick(alert);
+        holder.location.setText(alert.getLocationText());
+        holder.location.setOnClickListener(v -> listener.onLocationClick(alert));
 
-            // Show confirmation message
-            Toast.makeText(v.getContext(), "Location updated, open Map tab", Toast.LENGTH_SHORT).show();
+        // Enable/disable buttons based on current status
+        holder.helpButton.setEnabled(!"helping".equals(alert.getStatus()));
+        holder.ackButton.setEnabled(!alert.isAcknowledged());
+
+        holder.helpButton.setOnClickListener(v -> {
+            listener.onHelp(alert);                   // Fragment callback
+            alert.setStatus("helping");               // Update local object
+            holder.helpButton.setEnabled(false);      // Update UI
+
+            // Update Room DB
+            new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
+
+            // Sync to Firestore
+            syncToFirestore(alert, holder.itemView);
         });
 
+        holder.ackButton.setOnClickListener(v -> {
+            listener.onAcknowledge(alert);             // Fragment callback
+            alert.setAcknowledged(true);               // Update local object
+            holder.ackButton.setEnabled(false);        // Update UI
 
-        holder.helpButton.setOnClickListener(v -> listener.onHelp(alert));
-        holder.ackButton.setOnClickListener(v -> listener.onAcknowledge(alert));
+            // Update Room DB
+            new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
+
+            // Sync to Firestore
+            syncToFirestore(alert, holder.itemView);
+        });
     }
 
+    private void syncToFirestore(SosAlert alert, View itemView) {
+        if (alert.getUuid() == null || alert.getUuid().isEmpty()) return;
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", alert.getStatus());
+        updates.put("isAcknowledged", alert.isAcknowledged());
+
+        firestore.collection("SOS_Alerts") // <- exact case
+                .document(alert.getUuid())
+                .set(updates, com.google.firebase.firestore.SetOptions.merge()) // merge creates or updates
+                .addOnSuccessListener(unused -> {
+                    alert.setSynced(true);
+                    new Thread(() -> appDatabase.sosAlertDao().update(alert)).start();
+                })
+                .addOnFailureListener(e -> {
+                    alert.setSynced(false);
+                    Toast.makeText(itemView.getContext(),
+                            "Failed to sync SOS to Firestore", Toast.LENGTH_SHORT).show();
+                    Log.e("FirestoreSync", "Error updating alert", e);
+                });
+    }
 
     @Override
     public int getItemCount() {

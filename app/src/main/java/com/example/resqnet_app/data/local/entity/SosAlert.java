@@ -17,6 +17,16 @@ public class SosAlert {
         this.timestamp = timestamp;
     }
 
+    public boolean isHelping = false;
+    public boolean isAcknowledged = false;
+
+    // Getters and Setters
+    public boolean isHelping() { return isHelping; }
+    public void setHelping(boolean helping) { isHelping = helping; }
+
+    public boolean isAcknowledged() { return isAcknowledged; }
+    public void setAcknowledged(boolean acknowledged) { isAcknowledged = acknowledged; }
+
     public String status; // active, acknowledged, etc.
 
     public double latitude;

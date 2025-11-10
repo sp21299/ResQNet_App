@@ -89,6 +89,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     // -------------------- ONLINE LOGIN --------------------
+    // -------------------- ONLINE LOGIN --------------------
     private void loginUserOnline(String email, String password) {
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
@@ -103,22 +104,45 @@ public class LoginActivity extends AppCompatActivity {
                                         if (document.exists()) {
                                             String name = document.getString("name");
 
-                                            // Save user data locally
+                                            // Save user data locally in SharedPreferences
                                             SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                                             SharedPreferences.Editor editor = prefs.edit();
                                             editor.putString("username", name);
                                             editor.putBoolean("isLoggedInOffline", false);
                                             editor.apply();
 
-                                            // ✅ Added: also store username in session manager
+                                            // Save in session manager
                                             UserSessionManager session = new UserSessionManager(LoginActivity.this);
                                             session.saveUsername(name);
 
+                                            // ✅ Save user in Room DB
+                                            new Thread(() -> {
+                                                AppDatabase roomDb = AppDatabase.getInstance(getApplicationContext());
+                                                UserDao userDao = roomDb.userDao();
+
+                                                // Check if user already exists
+                                                User existingUser = userDao.getUserByEmail(email);
+                                                if (existingUser == null) {
+                                                    User newUser = new User();
+                                                    newUser.setName(name);
+                                                    newUser.setEmail(email);
+                                                    newUser.setPassword(password); // storing password in plain text is not secure; ideally hash it
+                                                    userDao.insert(newUser);
+                                                } else {
+                                                    // Update existing user details
+                                                    existingUser.setName(name);
+                                                    existingUser.setPassword(password);
+                                                    userDao.updateUser(existingUser);
+                                                }
+                                            }).start();
+
                                             Toast.makeText(LoginActivity.this, "Welcome " + name, Toast.LENGTH_LONG).show();
 
+                                            // Start sync service
                                             Intent syncIntent = new Intent(LoginActivity.this, SyncService.class);
                                             startService(syncIntent);
 
+                                            // Navigate to home activity
                                             Intent intent = new Intent(LoginActivity.this, home_activity.class);
                                             intent.putExtra("openFragment", "home");
                                             startActivity(intent);
@@ -139,6 +163,7 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
+
 
     // -------------------- OFFLINE LOGIN --------------------
     private void loginUserOffline(String email, String password) {
