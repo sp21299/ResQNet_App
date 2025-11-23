@@ -19,9 +19,9 @@ ResQNet is an Android app that helps users communicate during emergencies withou
 ## Screenshots
 
 ![Login Screen](images/login.png)  
-![Login Screen](images/register.png)  
-![Login Screen](images/home.png)  
-![Login Screen](images/alerts.png)  
+![Register Screen](images/register.png)  
+![Home Screen](images/home.png)  
+![Alerts Screen](images/alerts.png)  
 ![Map Screen](images/map.png)  
 ![Chat Screen](images/chat.png)  
 ![Admin Dashboard](images/admin.png)  
